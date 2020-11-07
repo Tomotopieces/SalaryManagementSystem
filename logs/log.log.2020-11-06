@@ -1,0 +1,25 @@
+2020-11-06 21:56:42  [ AWT-EventQueue-0:0 ] - [ INFO ]  Command executed: SELECT * FROM `employee` WHERE `id` = 1;
+2020-11-06 21:56:42  [ AWT-EventQueue-0:26 ] - [ INFO ]  Command executed: SELECT * FROM `employee` WHERE `id` = 1;
+2020-11-06 21:57:54  [ AWT-EventQueue-0:72818 ] - [ WARN ]  Failed to create new salary because of wrong month format: 202005
+2020-11-06 22:01:15  [ AWT-EventQueue-0:273619 ] - [ WARN ]  Failed to create new salary because of wrong month format: 202005
+2020-11-06 22:01:33  [ AWT-EventQueue-0:0 ] - [ INFO ]  Command executed: SELECT * FROM `employee` WHERE `id` = 1;
+2020-11-06 22:01:33  [ AWT-EventQueue-0:8 ] - [ INFO ]  Command executed: SELECT * FROM `employee` WHERE `id` = 1;
+2020-11-06 22:02:04  [ AWT-EventQueue-0:31368 ] - [ INFO ]  Command executed: SELECT * FROM `salary`;
+2020-11-06 22:02:04  [ AWT-EventQueue-0:31595 ] - [ ERROR ]  Field 'employeeId' doesn't have a default value
+2020-11-06 22:02:04  [ AWT-EventQueue-0:31608 ] - [ WARN ]  Failed to create new salary: Salary{id=0, employeeId=3, base=100.0, post=100.0, length=100.0, phone=100.0, traffic=100.0, tax=-100.0, security=-100.0, fund=-100.0, actually=220.0, month='202010', createTime=2020-11-06 22:02:04.807, updateTime=2020-11-06 22:02:04.807, createOperatorId=1, updateOperatorId=1} for some reason.
+2020-11-06 22:04:33  [ AWT-EventQueue-0:0 ] - [ INFO ]  Command executed: SELECT * FROM `employee` WHERE `id` = 1;
+2020-11-06 22:04:33  [ AWT-EventQueue-0:9 ] - [ INFO ]  Command executed: SELECT * FROM `employee` WHERE `id` = 1;
+2020-11-06 22:04:51  [ AWT-EventQueue-0:18345 ] - [ INFO ]  Command executed: SELECT * FROM `salary`;
+2020-11-06 22:04:51  [ AWT-EventQueue-0:18526 ] - [ INFO ]  Command executed: INSERT INTO `salary` (`employeeId`, `base`, `post`, `length`, `phone`, `traffic`, `tax`, `security`, `fund`, `actually`, `month`, `createOperatorId`, `updateOperatorId`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2020-11-06 22:04:51  [ AWT-EventQueue-0:18527 ] - [ INFO ]  Administrator with id: 1 created a new salary(ignore id): Salary{id=0, employeeId=3, base=100.0, post=100.0, length=100.0, phone=100.0, traffic=100.0, tax=-100.0, security=-100.0, fund=-100.0, actually=220.0, month='202010', createTime=2020-11-06 22:04:51.578, updateTime=2020-11-06 22:04:51.578, createOperatorId=1, updateOperatorId=1}
+2020-11-06 22:05:33  [ AWT-EventQueue-0:1 ] - [ INFO ]  Command executed: SELECT * FROM `employee` WHERE `id` = 1;
+2020-11-06 22:05:33  [ AWT-EventQueue-0:8 ] - [ INFO ]  Command executed: SELECT * FROM `employee` WHERE `id` = 1;
+2020-11-06 22:06:16  [ AWT-EventQueue-0:42887 ] - [ INFO ]  Command executed: SELECT * FROM `salary`;
+2020-11-06 22:06:16  [ AWT-EventQueue-0:43049 ] - [ INFO ]  Command executed: INSERT INTO `salary` (`employeeId`, `base`, `post`, `length`, `phone`, `traffic`, `tax`, `security`, `fund`, `actually`, `month`, `createOperatorId`, `updateOperatorId`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2020-11-06 22:06:16  [ AWT-EventQueue-0:43050 ] - [ INFO ]  Administrator with id: 1 created a new salary(ignore id): Salary{id=0, employeeId=4, base=100.0, post=100.0, length=100.0, phone=50.0, traffic=50.0, tax=-50.0, security=-50.0, fund=-50.0, actually=250.0, month='201304', createTime=2020-11-06 22:06:16.395, updateTime=2020-11-06 22:06:16.395, createOperatorId=1, updateOperatorId=1}
+2020-11-06 23:01:10  [ AWT-EventQueue-0:0 ] - [ INFO ]  Command executed: SELECT * FROM `employee` WHERE `id` = 1;
+2020-11-06 23:01:10  [ AWT-EventQueue-0:7 ] - [ INFO ]  Command executed: SELECT * FROM `employee` WHERE `id` = 1;
+2020-11-06 23:01:17  [ AWT-EventQueue-0:6991 ] - [ INFO ]  Command executed: SELECT * FROM `salary`;
+2020-11-06 23:02:53  [ AWT-EventQueue-0:0 ] - [ INFO ]  Command executed: SELECT * FROM `employee` WHERE `id` = 1;
+2020-11-06 23:02:53  [ AWT-EventQueue-0:8 ] - [ INFO ]  Command executed: SELECT * FROM `employee` WHERE `id` = 1;
+2020-11-06 23:02:56  [ AWT-EventQueue-0:2530 ] - [ INFO ]  Command executed: SELECT * FROM `salary`;

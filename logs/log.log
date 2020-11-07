@@ -1,0 +1,67 @@
+2020-11-07 08:50:42  [ AWT-EventQueue-0:0 ] - [ INFO ]  Command executed: SELECT * FROM `employee` WHERE `account` = 'fqe001';
+2020-11-07 08:51:08  [ AWT-EventQueue-0:26372 ] - [ INFO ]  Command executed: SELECT * FROM `employee` WHERE `account` = 'fqe001';
+2020-11-07 08:51:19  [ AWT-EventQueue-0:36840 ] - [ INFO ]  Command executed: SELECT * FROM `employee` WHERE `account` = 'fqe001';
+2020-11-07 08:51:19  [ AWT-EventQueue-0:36981 ] - [ INFO ]  Command executed: SELECT * FROM `employee` WHERE `id` = 1;
+2020-11-07 08:51:19  [ AWT-EventQueue-0:36981 ] - [ INFO ]  Command executed: SELECT * FROM `employee` WHERE `id` = 1;
+2020-11-07 08:52:25  [ AWT-EventQueue-0:103117 ] - [ INFO ]  Employee with id: 1 query the salary slip of month: 202010
+2020-11-07 08:52:25  [ AWT-EventQueue-0:103133 ] - [ INFO ]  Command executed: SELECT * FROM `salary`;
+2020-11-07 08:52:51  [ AWT-EventQueue-0:129053 ] - [ INFO ]  Employee with id: 1 query the salary slip of month: 202010
+2020-11-07 08:52:51  [ AWT-EventQueue-0:129053 ] - [ INFO ]  Command executed: SELECT * FROM `salary`;
+2020-11-07 08:52:56  [ AWT-EventQueue-0:134021 ] - [ INFO ]  Employee with id: 1 query the salary slip of month: 202011
+2020-11-07 08:52:56  [ AWT-EventQueue-0:134021 ] - [ INFO ]  Command executed: SELECT * FROM `salary`;
+2020-11-07 08:52:57  [ AWT-EventQueue-0:135286 ] - [ INFO ]  Employee with id: 1 query the salary slip of month: 202011
+2020-11-07 08:52:57  [ AWT-EventQueue-0:135286 ] - [ INFO ]  Command executed: SELECT * FROM `salary`;
+2020-11-07 08:52:58  [ AWT-EventQueue-0:136505 ] - [ INFO ]  Employee with id: 1 query the salary slip of month: 202011
+2020-11-07 08:52:58  [ AWT-EventQueue-0:136505 ] - [ INFO ]  Command executed: SELECT * FROM `salary`;
+2020-11-07 08:53:02  [ AWT-EventQueue-0:140442 ] - [ INFO ]  Employee with id: 1 query the salary slip of month: 202010
+2020-11-07 08:53:02  [ AWT-EventQueue-0:140442 ] - [ INFO ]  Command executed: SELECT * FROM `salary`;
+2020-11-07 08:53:06  [ AWT-EventQueue-0:144239 ] - [ INFO ]  Employee with id: 1 query the salary slip of month: 202012
+2020-11-07 08:53:06  [ AWT-EventQueue-0:144239 ] - [ INFO ]  Command executed: SELECT * FROM `salary`;
+2020-11-07 08:53:07  [ AWT-EventQueue-0:144848 ] - [ INFO ]  Employee with id: 1 query the salary slip of month: 202012
+2020-11-07 08:53:07  [ AWT-EventQueue-0:144864 ] - [ INFO ]  Command executed: SELECT * FROM `salary`;
+2020-11-07 08:53:07  [ AWT-EventQueue-0:145286 ] - [ INFO ]  Employee with id: 1 query the salary slip of month: 202012
+2020-11-07 08:53:07  [ AWT-EventQueue-0:145286 ] - [ INFO ]  Command executed: SELECT * FROM `salary`;
+2020-11-07 08:53:07  [ AWT-EventQueue-0:145583 ] - [ INFO ]  Employee with id: 1 query the salary slip of month: 202012
+2020-11-07 08:53:07  [ AWT-EventQueue-0:145583 ] - [ INFO ]  Command executed: SELECT * FROM `salary`;
+2020-11-07 08:53:08  [ AWT-EventQueue-0:145833 ] - [ INFO ]  Employee with id: 1 query the salary slip of month: 202012
+2020-11-07 08:53:08  [ AWT-EventQueue-0:145833 ] - [ INFO ]  Command executed: SELECT * FROM `salary`;
+2020-11-07 08:54:00  [ AWT-EventQueue-0:198163 ] - [ INFO ]  Employee with id: 1 query the salary slip of month: 202012
+2020-11-07 08:54:00  [ AWT-EventQueue-0:198163 ] - [ INFO ]  Command executed: SELECT * FROM `salary`;
+2020-11-07 08:55:02  [ AWT-EventQueue-0:0 ] - [ INFO ]  Command executed: SELECT * FROM `employee` WHERE `account` = 'fqe001';
+2020-11-07 08:55:02  [ AWT-EventQueue-0:78 ] - [ INFO ]  Command executed: SELECT * FROM `employee` WHERE `id` = 1;
+2020-11-07 08:55:02  [ AWT-EventQueue-0:78 ] - [ INFO ]  Command executed: SELECT * FROM `employee` WHERE `id` = 1;
+2020-11-07 08:55:16  [ AWT-EventQueue-0:13780 ] - [ INFO ]  Employee with id: 1 query the salary slip of month: 202010
+2020-11-07 08:55:16  [ AWT-EventQueue-0:13780 ] - [ INFO ]  Command executed: SELECT * FROM `salary`;
+2020-11-07 08:55:19  [ AWT-EventQueue-0:17108 ] - [ INFO ]  Employee with id: 1 query the salary slip of month: 202011
+2020-11-07 08:55:19  [ AWT-EventQueue-0:17108 ] - [ INFO ]  Command executed: SELECT * FROM `salary`;
+2020-11-07 08:55:22  [ AWT-EventQueue-0:20108 ] - [ INFO ]  Employee with id: 1 query the salary slip of month: 202012
+2020-11-07 08:55:22  [ AWT-EventQueue-0:20108 ] - [ INFO ]  Command executed: SELECT * FROM `salary`;
+2020-11-07 08:58:02  [ AWT-EventQueue-0:0 ] - [ INFO ]  Command executed: SELECT * FROM `employee` WHERE `account` = 'feq001';
+2020-11-07 08:58:12  [ AWT-EventQueue-0:9343 ] - [ INFO ]  Command executed: SELECT * FROM `employee` WHERE `account` = 'fqe001';
+2020-11-07 08:58:12  [ AWT-EventQueue-0:9421 ] - [ INFO ]  Command executed: SELECT * FROM `employee` WHERE `id` = 1;
+2020-11-07 08:58:12  [ AWT-EventQueue-0:9421 ] - [ INFO ]  Command executed: SELECT * FROM `employee` WHERE `id` = 1;
+2020-11-07 09:01:21  [ AWT-EventQueue-0:0 ] - [ INFO ]  Command executed: SELECT * FROM `employee` WHERE `account` = 'fqe001';
+2020-11-07 09:01:21  [ AWT-EventQueue-0:94 ] - [ INFO ]  Command executed: SELECT * FROM `employee` WHERE `id` = 1;
+2020-11-07 09:01:21  [ AWT-EventQueue-0:109 ] - [ INFO ]  Command executed: SELECT * FROM `employee` WHERE `id` = 1;
+2020-11-07 09:01:28  [ AWT-EventQueue-0:7343 ] - [ INFO ]  Employee with id: 1 query the salary slip of month: 200808
+2020-11-07 09:01:28  [ AWT-EventQueue-0:7343 ] - [ INFO ]  Command executed: SELECT * FROM `salary`;
+2020-11-07 09:08:24  [ AWT-EventQueue-0:0 ] - [ INFO ]  Command executed: SELECT * FROM `employee` WHERE `account` = 'fqe001';
+2020-11-07 09:08:24  [ AWT-EventQueue-0:78 ] - [ INFO ]  Command executed: SELECT * FROM `employee` WHERE `id` = 1;
+2020-11-07 09:08:24  [ AWT-EventQueue-0:78 ] - [ INFO ]  Command executed: SELECT * FROM `employee` WHERE `id` = 1;
+2020-11-07 09:08:33  [ AWT-EventQueue-0:8656 ] - [ INFO ]  Employee with id: 1 query the salary slip of month: 202009
+2020-11-07 09:08:33  [ AWT-EventQueue-0:8656 ] - [ INFO ]  Command executed: SELECT * FROM `salary`;
+2020-11-07 09:08:36  [ AWT-EventQueue-0:11796 ] - [ INFO ]  Employee with id: 1 query the salary slip of month: 202010
+2020-11-07 09:08:36  [ AWT-EventQueue-0:11796 ] - [ INFO ]  Command executed: SELECT * FROM `salary`;
+2020-11-07 09:08:38  [ AWT-EventQueue-0:14108 ] - [ INFO ]  Employee with id: 1 query the salary slip of month: 202010
+2020-11-07 09:08:38  [ AWT-EventQueue-0:14108 ] - [ INFO ]  Command executed: SELECT * FROM `salary`;
+2020-11-07 09:08:40  [ AWT-EventQueue-0:16218 ] - [ INFO ]  Employee with id: 1 query the salary slip of month: 202011
+2020-11-07 09:08:40  [ AWT-EventQueue-0:16218 ] - [ INFO ]  Command executed: SELECT * FROM `salary`;
+2020-11-07 09:09:38  [ AWT-EventQueue-0:0 ] - [ INFO ]  Command executed: SELECT * FROM `employee` WHERE `account` = 'fqe001';
+2020-11-07 09:09:38  [ AWT-EventQueue-0:93 ] - [ INFO ]  Command executed: SELECT * FROM `employee` WHERE `id` = 1;
+2020-11-07 09:09:38  [ AWT-EventQueue-0:93 ] - [ INFO ]  Command executed: SELECT * FROM `employee` WHERE `id` = 1;
+2020-11-07 09:09:46  [ AWT-EventQueue-0:8046 ] - [ INFO ]  Employee with id: 1 query the salary slip of month: 202008
+2020-11-07 09:09:46  [ AWT-EventQueue-0:8046 ] - [ INFO ]  Command executed: SELECT * FROM `salary`;
+2020-11-07 09:09:49  [ AWT-EventQueue-0:11108 ] - [ INFO ]  Employee with id: 1 query the salary slip of month: 202009
+2020-11-07 09:09:49  [ AWT-EventQueue-0:11108 ] - [ INFO ]  Command executed: SELECT * FROM `salary`;
+2020-11-07 09:09:52  [ AWT-EventQueue-0:14405 ] - [ INFO ]  Employee with id: 1 query the salary slip of month: 202010
+2020-11-07 09:09:52  [ AWT-EventQueue-0:14405 ] - [ INFO ]  Command executed: SELECT * FROM `salary`;
