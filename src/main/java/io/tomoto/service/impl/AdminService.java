@@ -10,7 +10,6 @@ import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -18,10 +17,11 @@ import static io.tomoto.util.RegexUtil.ACCOUNT_PATTERN;
 import static io.tomoto.util.RegexUtil.MONTH_PATTERN;
 import static io.tomoto.util.RegexUtil.NO_PATTERN;
 import static io.tomoto.util.RegexUtil.PASSWORD_PATTERN;
-//import java.util.stream.Collectors;
 
 /**
- * Service class for administrator. Please set the adminId before use.
+ * Service class for administrator.
+ * <p>
+ * Can read / create / update / delete employees and read / create / update salaries.
  * <p>
  * Singleton.
  *
@@ -49,14 +49,14 @@ public class AdminService implements Service {
      * @return the instance or null if employee with the id is not an administrator
      */
     public static AdminService getInstance(AdminView view) {
-        Employee employee = Instance.INSTANCE.employeeDao.read(view.getId());
+        Employee employee = Instance.INSTANCE.employeeDao.read(view.getUserId());
         if (employee == null || !employee.getAdmin()) { // if the employee is not an administrator
-            logger.warn("Employee with id: " + view.getId() + " is not an administrator.");
-            view.showHint("Employee with id: " + view.getId() + " do not exists or isn't an administrator");
+//            logger.warn("Employee with id: " + view.getId() + " is not an administrator.");
+            view.showHint("Employee with id: " + view.getUserId() + " do not exists or isn't an administrator");
             return null;
         }
         Instance.INSTANCE.view = view;
-        Instance.INSTANCE.adminId = view.getId();
+        Instance.INSTANCE.adminId = view.getUserId();
         return Instance.INSTANCE;
     }
 
@@ -84,21 +84,21 @@ public class AdminService implements Service {
                 name, idNo, phone, email, gender, birthday,
                 adminId);
         if (!ACCOUNT_PATTERN.matcher(account).matches()) { // if illegal account format
-            logger.warn("Failed to create new employee because of illegal account format: " + account);
+//            logger.warn("Failed to create new employee because of illegal account format: " + account);
             view.showHint("账户名不合法！必须为六位任意字符并且不含空格。");
             return false;
         } else if (!PASSWORD_PATTERN.matcher(password).matches()) { // if illegal password format
-            logger.warn("Failed to create new employee because of illegal password format: " + password);
+//            logger.warn("Failed to create new employee because of illegal password format: " + password);
             view.showHint("密码不合法！必须为六位任意字符并且不含空格。");
             return false;
-        } // TODO checking: unique idNo, unique phone, unique email
+        } // TODO unique check: account, idNo, phone, email
 
         if (!employeeDao.create(employee)) { // if no employee was created
-            logger.warn("Failed to create new employee: " + employee + " for some reason.");
+//            logger.warn("Failed to create new employee: " + employee + " for some reason.");
             view.showHint("账户创建失败！");
             return false;
         }
-        logger.info("Administrator with id: " + adminId + " created a new employee(ignore id): " + employee);
+//        logger.info("Administrator with id: " + adminId + " created a new employee(ignore id): " + employee);
         view.showHint("账号创建成功！");
         return true;
     }
@@ -115,7 +115,7 @@ public class AdminService implements Service {
             view.showHint("账户删除失败！");
             return false;
         }
-        logger.info(adminId);
+//        logger.info(adminId);
         view.showHint("账户删除成功！");
         return true;
     }
@@ -137,13 +137,13 @@ public class AdminService implements Service {
      * @return a set of employee
      */
     public Set<Employee> readEmployee(String info) {
-        Set<Employee> result = readAllEmployees();
+        Set<Employee> employees = readAllEmployees();
         if (NO_PATTERN.matcher(info).matches()) {
-            result.removeIf(employee -> !employee.getNo().equals(info));
+            employees.removeIf(employee -> !employee.getNo().equals(info));
         } else {
-            result.removeIf(employee -> !employee.getName().equals(info));
+            employees.removeIf(employee -> !employee.getName().equals(info));
         }
-        return result;
+        return employees;
     }
 
     /**
@@ -156,40 +156,22 @@ public class AdminService implements Service {
     }
 
     /**
-     * Updates an employee.
+     * Update an employee.
      *
-     * @param id       employee id
-     * @param no       employee number
-     * @param account  employee account
-     * @param isAdmin  whether the employee is an administrator
-     * @param password employee account password
-     * @param name     employee name
-     * @param idNo     employee id card number
-     * @param phone    employee phone number
-     * @param email    employee e-mail address
-     * @param gender   employee gender
-     * @param birthday employee birthday, format as 'yyyy-MM-dd'
+     * @param id           the employee id
+     * @param propertyName an property name
+     * @param property     new property value
+     * @param <T>          the property type
      * @return whether the update successful or not
      */
-    public Boolean updateEmployee(Integer id, String no, String account, Boolean isAdmin, String password,
-                                  String name, String idNo, String phone, String email, String gender, String birthday) {
-        Employee employee = employeeDao.read(id);
-        if (employee == null) { // if the employee does not exists
-            logger.warn("Employee with id: " + id + " does not exists.");
-            view.showHint("员工id不存在！");
-            return false;
+    public <T> Boolean updateEmployee(Integer id, String propertyName, T property) {
+        Boolean successful = employeeDao.update(adminId, id, propertyName, property);
+        if (!successful) {
+            view.showHint("更新员工失败！");
+        } else {
+            view.showHint("更新员工成功！");
         }
-        if (!employeeDao.update( // if no employee was updated
-                employee.setNo(no).setAccount(account).setAdmin(isAdmin).setPassword(password)
-                        .setName(name).setIdNo(idNo).setPhone(phone).setEmail(email).setGender(gender)
-                        .setBirthday(Timestamp.valueOf(birthday))
-                        .setUpdateOperatorId(adminId))) {
-            logger.warn("Failed to update employee to: " + employee + " for some reason.");
-            view.showHint("账户更新失败！");
-            return false;
-        }
-        view.showHint("账户更新成功！");
-        return true;
+        return successful;
     }
 
     // Salary CRUD (without delete)
@@ -214,16 +196,16 @@ public class AdminService implements Service {
             Integer employeeId,
             Double base, Double post, Double length, Double phone, Double traffic,
             Double tax, Double security, Double fund,
-            Double actually, String month) {
+            Double actually, Double fin, String month) {
         if (!MONTH_PATTERN.matcher(month).matches()) {
-            logger.warn("Failed to create new salary because of wrong month format: " + month);
+//            logger.warn("Failed to create new salary because of wrong month format: " + month);
             view.showHint("创建工资条失败！月份格式不合法，必须为：'yyyyMM'。");
             return false;
         } else if (salaryDao.readAll().stream().anyMatch(salary ->
                 salary.getEmployeeId().equals(employeeId) && // if the employee's
                         salary.getMonth().equals(month))) { // the month salary is already exists
-            logger.warn("Failed to create new salary because the salary for employee with id: " + employeeId + " of " +
-                    "month: " + month + " is already exists.");
+//            logger.warn("Failed to create new salary because the salary for employee with id: " + employeeId + " of " +
+//                    "month: " + month + " is already exists.");
             view.showHint("创建工资条失败！员工当月工资条已存在。");
             return false;
         }
@@ -231,10 +213,10 @@ public class AdminService implements Service {
                 employeeId,
                 base, post, length, phone, traffic,
                 tax, security, fund,
-                actually, month,
+                actually, fin, month,
                 adminId);
         if (!salaryDao.create(salary)) { // if no salary was created
-            logger.warn("Failed to create new salary: " + salary + " for some reason.");
+//            logger.warn("Failed to create new salary: " + salary + " for some reason.");
             view.showHint("创建工资条失败！");
             return false;
         }
@@ -246,21 +228,20 @@ public class AdminService implements Service {
     /**
      * Reads salary(ies) by given info.
      *
-     * @param info the employee name or account
+     * @param info the employee name or No
      * @return a set of salary(ies)
      */
-    public Set<Salary> readSalary(String info) {
-        HashSet<Salary> result = new HashSet<>();
-
+    public Set<Salary> readSalaryByInfo(String info) {
         // get employee(s)
         Set<Employee> employees = employeeDao.readAll();
-        if /* info is an account */ (ACCOUNT_PATTERN.matcher(info).matches()) {
-            employees.removeIf(e -> !e.getAccount().equals(info));
+        if /* info is an employee No */ (NO_PATTERN.matcher(info).matches()) {
+            employees.removeIf(e -> !e.getNo().equals(info));
         } else /* if info is a name */ {
             employees.removeIf(e -> !e.getName().equals(info));
         }
 
         // get salary slip(s)
+        HashSet<Salary> result = new HashSet<>();
         Set<Salary> salaries = salaryDao.readAll();
         employees.forEach(employee ->
                 salaries.forEach(salary -> {
@@ -278,24 +259,23 @@ public class AdminService implements Service {
      * @param month the month of salary, format as 'yyyyMM'
      * @return a set of salary(ies)
      */
-    public Set<Salary> readSalary(String info, String month) {
+    public Set<Salary> readSalaryByInfoFrom(String info, String month) {
         if (!MONTH_PATTERN.matcher(month).matches()) {
-            logger.warn("Failed to read salary(ies) because of wrong month format: " + month);
+//            logger.warn("Failed to read salary(ies) because of wrong month format: " + month);
             view.showHint("读取工资条失败！月份格式不合法，必须为：'yyyyMM'。");
             return null;
         }
 
-        Set<Salary> result = new HashSet<>();
-
         // get employee(s)
         Set<Employee> employees = employeeDao.readAll();
-        if /* info is an account */ (ACCOUNT_PATTERN.matcher(info).matches()) {
-            employees.removeIf(e -> !e.getAccount().equals(info));
+        if /* info is an employee No */ (NO_PATTERN.matcher(info).matches()) {
+            employees.removeIf(e -> !e.getNo().equals(info));
         } else /* if info is a name */ {
             employees.removeIf(e -> !e.getName().equals(info));
         }
 
         // get salary slip(s)
+        Set<Salary> result = new HashSet<>();
         Set<Salary> salaries = salaryDao.readAll();
         employees.forEach(employee ->
                 salaries.forEach(salary -> {
@@ -315,24 +295,23 @@ public class AdminService implements Service {
      * @param to   the end month of salary, format as 'yyyyMM'
      * @return a set of salary(ies)
      */
-    public Set<Salary> readSalary(String info, String from, String to) {
-        if (!MONTH_PATTERN.matcher(from).matches() || MONTH_PATTERN.matcher(to).matches()) {
-            logger.warn("Failed to read salary(ies) because of wrong month format: " + from + " " + to);
+    public Set<Salary> readSalaryByInfoFromTo(String info, String from, String to) {
+        if (!MONTH_PATTERN.matcher(from).matches() || !MONTH_PATTERN.matcher(to).matches()) {
+//            logger.warn("Failed to read salary(ies) because of wrong month format: " + from + " " + to);
             view.showHint("读取工资条失败！月份格式不合法，必须为：'yyyyMM'。");
             return null;
         }
 
-        Set<Salary> result = new HashSet<>();
-
         // get employee(s)
         Set<Employee> employees = employeeDao.readAll();
-        if /* info is an account */ (ACCOUNT_PATTERN.matcher(info).matches()) {
-            employees.removeIf(e -> !e.getAccount().equals(info));
+        if /* info is an employee No */ (NO_PATTERN.matcher(info).matches()) {
+            employees.removeIf(e -> !e.getNo().equals(info));
         } else /* if info is a name */ {
             employees.removeIf(e -> !e.getName().equals(info));
         }
 
         // get salary slip(s)
+        Set<Salary> result = new HashSet<>();
         Set<Salary> salaries = salaryDao.readAll();
         employees.forEach(employee ->
                 salaries.forEach(salary -> {
@@ -346,6 +325,44 @@ public class AdminService implements Service {
     }
 
     /**
+     * Reads salary(ies) by given month.
+     *
+     * @param month the month of salary
+     * @return a set of salary(ies)
+     */
+    public Set<Salary> readSalaryByMonth(String month) {
+        if (!MONTH_PATTERN.matcher(month).matches()) {
+//            logger.warn("Failed to read salary(ies) because of wrong month format: " + month);
+            view.showHint("读取工资条失败！月份格式不合法，必须为：'yyyyMM'。");
+            return null;
+        }
+
+        // get salary slip(s)
+        Set<Salary> salaries = salaryDao.readAll();
+        salaries.removeIf(salary -> !salary.getMonth().equals(month));
+        return salaries;
+    }
+
+    /**
+     * Reads salary(ies) by given month period.
+     *
+     * @param from the begin month of salary
+     * @param to   the end month of salary
+     * @return a set of salary(ies)
+     */
+    public Set<Salary> readSalaryByFromTo(String from, String to) {
+        if (!MONTH_PATTERN.matcher(from).matches() || !MONTH_PATTERN.matcher(to).matches()) {
+//            logger.warn("Failed to read salary(ies) because of wrong month format: " + from + " " + to);
+            view.showHint("读取工资条失败！月份格式不合法，必须为：'yyyyMM'。");
+            return null;
+        }
+        // get salary slip(s)
+        Set<Salary> salaries = salaryDao.readAll();
+        salaries.removeIf(salary -> salary.getMonth().compareTo(from) < 0 || salary.getMonth().compareTo(to) > 0);
+        return salaries;
+    }
+
+    /**
      * Reads all salary(ies).
      *
      * @return a set of salary(ies)
@@ -355,45 +372,58 @@ public class AdminService implements Service {
     }
 
     /**
-     * Updates a salary slip.
+     * Match the actually 'read function'.
      *
-     * @param id         salary slip id
-     * @param employeeId id of employee of the salary
-     * @param base       basic salary
-     * @param post       post salary
-     * @param length     length of service salary
-     * @param phone      communication subsidy
-     * @param traffic    transportation subsidy
-     * @param tax        personal income tax
-     * @param security   social security
-     * @param fund       housing fund
-     * @param actually   actually salary
-     * @param month      salary giving month, format as 'yyyyMM'
+     *
+     * @param info the employee name or account
+     * @param from the begin month of salary, format as 'yyyyMM'
+     * @param to   the end month of salary, format as 'yyyyMM'
+     * @return a set of salary(ies)
+     */
+    public Set<Salary> readSalary(String info, String from, String to) {
+        if (!info.isEmpty()) {
+            if (!from.isEmpty()) {
+                if (!to.isEmpty()) {
+                    return readSalaryByInfoFromTo(info, from, to);
+                } else {
+                    return readSalaryByInfoFrom(info, from);
+                }
+            } else {
+                return readSalaryByInfo(info);
+            }
+        } else {
+            if (!from.isEmpty()) {
+                if (!to.isEmpty()) {
+                    return readSalaryByFromTo(from, to);
+                } else {
+                    return readSalaryByMonth(from);
+                }
+            } else if (!to.isEmpty()) {
+                view.showHint("不能只填写结束月份！");
+                return null;
+            } else {
+                return readAllSalaries();
+            }
+        }
+    }
+
+    /**
+     * Update a salary slip.
+     *
+     * @param id           the salary id
+     * @param propertyName an property name
+     * @param property     new property value
+     * @param <T>          the property type
      * @return whether the update successful or not
      */
-    public Boolean updateSalary(
-            Integer id, Integer employeeId,
-            Double base, Double post, Double length, Double phone, Double traffic,
-            Double tax, Double security, Double fund,
-            Double actually, String month) {
-        if (!MONTH_PATTERN.matcher(month).matches()) {
-            logger.warn("Failed to update salary because of wrong month format: " + month);
-            view.showHint("更新工资条失败！月份格式不合法，必须为：'yyyyMM'。");
-            return false;
-        }
-        Salary salary = salaryDao.read(id);
-        if (!salaryDao.update( // if no salary slip was updated
-                salary.setEmployeeId(employeeId)
-                        .setBase(base).setPost(post).setLength(length).setPhone(phone).setTraffic(traffic)
-                        .setTax(tax).setSecurity(security).setFund(fund)
-                        .setActually(actually).setMonth(month)
-                        .setUpdateOperatorId(id))) {
-            logger.warn("Failed to update salary to: " + salary + " for some reason.");
+    public <T> Boolean updateSalary(Integer id, String propertyName, T property) {
+        Boolean successful = salaryDao.update(adminId, id, propertyName, property);
+        if (!successful) {
             view.showHint("更新工资条失败！");
-            return false;
+        } else {
+            view.showHint("更新工资条成功！");
         }
-        view.showHint("更新工资条成功！");
-        return true;
+        return successful;
     }
 
     @Override

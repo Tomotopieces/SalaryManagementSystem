@@ -12,6 +12,7 @@ import java.util.Properties;
 
 /**
  * Util class for database.
+ *
  * @author Tomoto
  * <p>
  * 2020/11/1 21:56

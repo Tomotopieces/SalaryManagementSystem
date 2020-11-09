@@ -3,12 +3,12 @@ package io.tomoto.view.impl;
 import io.tomoto.dao.entity.Employee;
 import io.tomoto.dao.entity.Salary;
 import io.tomoto.service.impl.EmployeeService;
+import io.tomoto.view.HintTextField;
 import io.tomoto.view.View;
 
 import javax.swing.*;
 import java.awt.*;
 import java.sql.SQLException;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -25,38 +25,60 @@ import static io.tomoto.util.DateUtil.DATE_FORMAT;
 public class EmployeeView extends JFrame implements View {
     private static final Integer DEFAULT_WIDTH = 480;
     private static final Integer DEFAULT_HEIGHT = 320;
-    private static final Integer DEFAULT_WIDTH_2 = 960;
-    private static final Integer DEFAULT_HEIGHT_2 = 320;
-
-    private static final String[] columnNames = {
-            "id", "员工id",
+    private static final Integer DEFAULT_WIDTH_2 = 1080;
+    private static final Integer DEFAULT_HEIGHT_2 = 640;
+    private static final String[] SALARY_TABLE_COLUMN_NAMES_CHINESE = {
+            "工资条id", "员工id",
             "基本工资", "岗位工资", "工龄工资", "通讯补贴", "交通补贴",
             "个税代缴", "社保代缴", "住房公积金",
-            "实际工资", "工资月份"
+            "实际工资", "到手工资", "工资月份",
     };
 
     private final EmployeeService service;
     private final Integer id; // employee id
-    private final ResetPasswordView resetPasswordView = new ResetPasswordView(this);
-    private final JTable salaryTable;
-    private Set<Salary> salarySet = new HashSet<>();
+    private final JTabbedPane mainPane = new JTabbedPane();
+    private final ResetPasswordView resetPasswordView = new ResetPasswordView(this); // password result frame
+    private Set<Salary> salarySet = new HashSet<>(); // results of 'read'
+    private JTable salaryTable; // the table for show the results of salarySet
+    private JScrollPane salaryTableScrollPane;
 
     public EmployeeView(Integer id) {
-        // initialize frame information
+        // initialize frame fields
         this.id = id;
         service = EmployeeService.getInstance(this);
+        initFrameInfo(); // initialize frame information
         assert service != null;
-        Employee employee = service.readEmployee();
-        setTitle("欢迎，" + employee.getName() + "。");
+        // add tabs
+        mainPane.addTab("个人信息", generatePersonalInfoTab(service.readEmployee())); // add personal info tab
+        mainPane.addTab("工资查询", generateSalaryReadTab()); // add salary info tab
+        // set main pane after tabs addition
+        setComponentsFont(mainPane, VIEW_FONT); // set all component font to MS Song, plain style, sile 12
+        mainPane.addChangeListener(e -> setSize(getPreferredSize())); // set tab switch listener, reset frame size
+
+        add(mainPane);
+        pack();
+    }
+
+    @Override
+    public void initFrameInfo() {
+        setTitle("欢迎，" + service.readEmployee().getName() + "。");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(DEFAULT_WIDTH, DEFAULT_HEIGHT);
+        setSize(getPreferredSize());
+        setResizable(false);
         setWindowsLookAndFeel();
+    }
 
-        JTabbedPane mainPane = new JTabbedPane();
-
-        // this tab show employee's information, allow employee to reset password
+    /**
+     * A tab with all information of an employee.
+     * <p>
+     * This tab show employee's information, allow employee to reset password.
+     *
+     * @param employee the employee
+     * @return the tab panel
+     */
+    private JPanel generatePersonalInfoTab(Employee employee) {
         JPanel infoTabPanel = new JPanel(new GridLayout(5, 2));
-        // show personal information
+        // show personal information of the employee
         infoTabPanel.add(new JLabel("工号：" + employee.getNo()));
         infoTabPanel.add(new JLabel("账号：" + employee.getAccount()));
         infoTabPanel.add(new JLabel("管理员：" + (employee.getAdmin() ? "是" : "否")));
@@ -72,62 +94,60 @@ public class EmployeeView extends JFrame implements View {
         buttonPanel.add(resetPasswordButton);
         infoTabPanel.add(buttonPanel);
         infoTabPanel.setBorder(BorderFactory.createEtchedBorder());
-        // add to index
-        mainPane.addTab("个人信息", infoTabPanel);
-
-        // this tab allow employee to query salary slips
-        JPanel salaryTabPanel = new JPanel();
-        JPanel queryPanel = new JPanel();
-        JTextField queryInputField = new JTextField(16); // input month
-        JButton queryButton = new JButton("查询");
-        queryPanel.add(queryInputField);
-        queryPanel.add(queryButton);
-        salaryTabPanel.add(queryPanel);
-
-        // generate salary result table
-        salaryTable = new JTable(salaryToArray(), columnNames);
-        salaryTable.setPreferredScrollableViewportSize(salaryTable.getPreferredSize());
-        salaryTabPanel.add(new JScrollPane(salaryTable));
-        mainPane.addTab("工资查询", salaryTabPanel);
-
-        // set 'reset password button' listener, clear 'reset frame' then show up
+        // set button listener, clear 'reset frame' then show up
         resetPasswordButton.addActionListener(event ->
                 EventQueue.invokeLater(() -> {
                     resetPasswordView.clear();
                     resetPasswordView.setVisible(true);
                 }));
+        return infoTabPanel;
+    }
 
-        // set 'read button' listener, update result
-        queryButton.addActionListener(event -> {
-            String month = queryInputField.getText();
-            if (!month.isEmpty()) {
-                salarySet = Collections.singleton(service.readSalary(month));
-                updateSalariesTable();
-            } else {
-                salarySet = service.readAllSalaries();
+    /**
+     * A tab with a month input field, a read button and a result table.
+     * <p>
+     * This tab allow employee to query salary slips.
+     *
+     * @return the panel
+     */
+    private JPanel generateSalaryReadTab() {
+        JPanel salaryTabPanel = new JPanel();
+        JPanel readPanel = new JPanel();
+        JLabel readInputLabel = new JLabel("月份：");
+        JTextField readMonthInputField1 = new HintTextField(25, "起始月份(yyyyMM)/留空"); // input 'from'
+        JLabel readInputLabel2 = new JLabel(" - ");
+        JTextField readMonthInputField2 = new HintTextField(25, "结束月份(yyyyMM)/留空"); // input 'to'
+        JButton readButton = new JButton("查询");
+        readPanel.add(readInputLabel);
+        readPanel.add(readMonthInputField1);
+        readPanel.add(readInputLabel2);
+        readPanel.add(readMonthInputField2);
+        readPanel.add(readButton);
+        salaryTabPanel.add(readPanel);
+        // generate salary result table
+        salaryTable = new JTable(new MyTableModel(salaryToArray(), SALARY_TABLE_COLUMN_NAMES_CHINESE));
+        salaryTable.setPreferredScrollableViewportSize(salaryTable.getPreferredSize());
+        salaryTableScrollPane = new JScrollPane(salaryTable);
+        salaryTabPanel.add(salaryTableScrollPane);
+        // set button listener, update result
+        readButton.addActionListener(event -> {
+            String from = readMonthInputField1.getText();
+            String to = readMonthInputField2.getText();
+            Set<Salary> result = service.readSalary(from, to);
+            if (result != null) {
+                salarySet = result;
+                updateTable(salaryTable, salaryToArray(), SALARY_TABLE_COLUMN_NAMES_CHINESE, salaryTableScrollPane);
+                pack();
             }
         });
-
-        // set tab listener, reset frame size
-        mainPane.addChangeListener(e -> {
-            if (mainPane.getSelectedIndex() == 0) {
-                setSize(DEFAULT_WIDTH, DEFAULT_HEIGHT);
-            } else {
-                setSize(DEFAULT_WIDTH_2, DEFAULT_HEIGHT_2);
-            }
-        });
-
-        setComponentsFont(mainPane, VIEW_FONT);
-
-        add(mainPane);
-        pack();
+        return salaryTabPanel;
     }
 
     private Object[][] salaryToArray() {
         Object[][] objects = new Object[salarySet.size()][];
         Iterator<Salary> iterator = salarySet.iterator();
         for (int i = 0; i < salarySet.size(); i++) {
-            objects[i] = new Object[16];
+            objects[i] = new Object[17];
             Object[] values = objects[i];
             Salary next = iterator.next();
             values[0] = next.getId();
@@ -141,26 +161,23 @@ public class EmployeeView extends JFrame implements View {
             values[8] = next.getSecurity();
             values[9] = next.getFund();
             values[10] = next.getActually();
-            values[11] = next.getMonth();
-            values[12] = next.getCreateOperatorId();
-            values[13] = next.getCreateTime();
-            values[14] = next.getUpdateOperatorId();
-            values[15] = next.getUpdateTime();
+            values[11] = next.getFin();
+            values[12] = next.getMonth();
+            values[13] = service.readOperatorName(next.getCreateOperatorId());
+            values[14] = next.getCreateTime();
+            values[15] = service.readOperatorName(next.getUpdateOperatorId());
+            values[16] = next.getUpdateTime();
         }
         return objects;
     }
 
-    private void updateSalariesTable() {
-        Object[] value = salaryToArray()[0];
-        for (int i = 0; i < 12; i++) {
-            salaryTable.setValueAt(value[i], 0, i);
-        }
-        salaryTable.repaint();
-    }
-
     @Override
     public Dimension getPreferredSize() {
-        return new Dimension(DEFAULT_WIDTH, DEFAULT_HEIGHT);
+        if (mainPane.getSelectedIndex() == 0) {
+            return new Dimension(DEFAULT_WIDTH, DEFAULT_HEIGHT);
+        } else {
+            return new Dimension(DEFAULT_WIDTH_2, DEFAULT_HEIGHT_2);
+        }
     }
 
     @Override
@@ -168,10 +185,20 @@ public class EmployeeView extends JFrame implements View {
         service.close();
     }
 
+    /**
+     * Gets the viewer employee id.
+     *
+     * @return the id
+     */
     public Integer getId() {
         return id;
     }
 
+    /**
+     * Gets the Employee service.
+     *
+     * @return the service
+     */
     public EmployeeService getService() {
         return service;
     }

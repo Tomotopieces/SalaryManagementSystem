@@ -69,9 +69,12 @@ public class ResetPasswordView extends JFrame implements SubView {
         pack();
     }
 
-    /**
-     * Clear all password text field.
-     */
+    @Override
+    public void initFrameInfo() {
+
+    }
+
+    @Override
     public void clear() {
         oldPasswordField.setText("");
         newPasswordField.setText("");

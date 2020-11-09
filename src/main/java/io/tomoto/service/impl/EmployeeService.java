@@ -62,25 +62,69 @@ public class EmployeeService implements Service {
     }
 
     /**
-     * Reads a salary slip.
+     * Reads salary slip(s) by given month.
      *
      * @param month the specific month of salary payment
      * @return the salary or null if not exists
      */
-    public Salary readSalary(String month) {
-        logger.info("Employee with id: " + id + " query the salary slip of month: " + month);
+    public Set<Salary> readSalaryByMonth(String month) {
+        logger.debug("Employee with id: " + id + " query the salary slip of month: " + month);
         Set<Salary> salaries = salaryDao.readAll();
         salaries.removeIf(salary -> !salary.getMonth().equals(month));
-        return salaries.iterator().next();
+        return salaries;
     }
 
     /**
-     * Reads all salary slips.
+     * Reads salary slip(s) by given month period.
+     *
+     * @param from the begin month
+     * @param to   the end month
+     * @return a set of salary slip(s)
+     */
+    public Set<Salary> readSalaryByFromTo(String from, String to) {
+        logger.debug("Employee with id: " + id + " query the salary slip of month: from " + from + " to " + to);
+        Set<Salary> salaries = salaryDao.readAll();
+        salaries.removeIf(salary -> salary.getMonth().compareTo(from) < 0 || salary.getMonth().compareTo(to) > 0);
+        return salaries;
+    }
+
+    /**
+     * Reads all the employee's salary slips.
      *
      * @return all salary slips
      */
     public Set<Salary> readAllSalaries() {
-        return salaryDao.readAll();
+        Set<Salary> salaries = salaryDao.readAll();
+        salaries.removeIf(salary -> !salary.getEmployeeId().equals(id));
+        return salaries;
+    }
+
+    /**
+     * Match the actually 'read function'.
+     *
+     * @param from the begin month
+     * @param to   the end month
+     * @return a set of salary slip(s).
+     */
+    public Set<Salary> readSalary(String from, String to) {
+        if (!from.isEmpty()) {
+            if (!to.isEmpty()) {
+                if (from.compareTo(to) > 0) {
+                    view.showHint("起始月份不能大于结束月份！");
+                } else {
+                    return readSalaryByFromTo(from, to);
+                }
+            } else {
+                return readSalaryByMonth(from);
+            }
+        } else {
+            if (!to.isEmpty()) {
+                view.showHint("不能只填写结束月份！");
+            } else {
+                return readAllSalaries();
+            }
+        }
+        return null;
     }
 
     /**
@@ -106,8 +150,8 @@ public class EmployeeService implements Service {
         }
 
         // if nothing wrong, update
+        employeeDao.update(id, id, "password", newPassword);
         employee.setPassword(newPassword);
-        employeeDao.update(employee);
         logger.info("Employee with id: " + id + " reset the password.");
         view.showHint("密码修改成功！");
         return true;
@@ -119,6 +163,10 @@ public class EmployeeService implements Service {
         logger.info("io.tomoto.service.impl.EmployeeService.employeeDao closed.");
         salaryDao.close();
         logger.info("io.tomoto.service.impl.EmployeeService.salaryDao closed.");
+    }
+
+    public String readOperatorName(Integer operatorId) {
+        return employeeDao.read(operatorId).getName();
     }
 
     /**

@@ -8,7 +8,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.sql.Timestamp;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -47,7 +46,7 @@ public interface Dao<T, ID> extends AutoCloseable {
                 getLogger().warn("Command executed but no data was deleted: " + command);
                 return false;
             } else {
-                getLogger().info("Command executed: " + command);
+                getLogger().debug("Command executed: " + command);
             }
         } catch (SQLException e) {
             getLogger().error(e.getMessage());
@@ -67,7 +66,7 @@ public interface Dao<T, ID> extends AutoCloseable {
         String command = "SELECT * FROM `" + getTableName() + "` WHERE `id` = " + id + ";";
         try (Statement statement = getConnection().createStatement();
              ResultSet resultSet = statement.executeQuery(command)) {
-            getLogger().info("Command executed: " + command);
+            getLogger().debug("Command executed: " + command);
             if (resultSet.next()) {
                 return readFirst(resultSet);
             }
@@ -88,7 +87,7 @@ public interface Dao<T, ID> extends AutoCloseable {
         String command = "SELECT * FROM `" + getTableName() + "`;";
         try (Statement statement = getConnection().createStatement();
              ResultSet resultSet = statement.executeQuery(command)) {
-            getLogger().info("Command executed: " + command);
+            getLogger().debug("Command executed: " + command);
             while (resultSet.next()) {
                 result.add(readFirst(resultSet));
             }
@@ -120,24 +119,27 @@ public interface Dao<T, ID> extends AutoCloseable {
     /**
      * Updates the property of an entity.
      *
-     * @param id           an entity id
+     * @param operatorId   the operator id
+     * @param entityId     an entity id
      * @param propertyName an property name
      * @param property     new property value
      * @param <R>          property type
      * @return whether the update successful or not
      */
-    default <R> Boolean update(Integer id, String propertyName, R property) {
-        String command = "UPDATE `" + getTableName() + "` SET " +
-                "`" + propertyName + "` = ? WHERE id = ?";
+    default <R> Boolean update(Integer operatorId, Integer entityId, String propertyName, R property) {
+        String command = "UPDATE `" + getTableName() + "` SET `" +
+                propertyName + "` = ?, `updateOperatorId` = ? WHERE id = ?;";
         try (PreparedStatement statement = getConnection().prepareStatement(command)) {
             if (!setStatementParameter(statement, 1, property)) {
-                getLogger().warn("Unexpected property type: " + property.getClass().getName());
                 return false;
             }
-            statement.setInt(2, id);
+            statement.setInt(2, operatorId);
+            statement.setInt(3, entityId);
             if (statement.executeUpdate() == 0) {
-                getLogger().error("Failed to update.");
+                getLogger().warn("Failed to update.");
                 return false;
+            } else {
+                getLogger().debug("Command executed: " + command);
             }
         } catch (SQLException e) {
             getLogger().error(e.getMessage());

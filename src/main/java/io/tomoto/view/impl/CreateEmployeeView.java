@@ -1,5 +1,6 @@
 package io.tomoto.view.impl;
 
+import io.tomoto.view.HintTextField;
 import io.tomoto.view.SubView;
 
 import javax.swing.*;
@@ -40,21 +41,21 @@ public class CreateEmployeeView extends JFrame implements SubView {
 
         JPanel noPart = new JPanel();
         JLabel noLabel = new JLabel("工号：");
-        noField = new JTextField(8);
+        noField = new HintTextField(16, "e开头三位数字");
         noPart.add(noLabel);
         noPart.add(noField);
         line1.add(noPart);
 
         JPanel accountPart = new JPanel();
         JLabel accountLabel = new JLabel("账户：");
-        accountField = new JTextField(8);
+        accountField = new HintTextField(16, "六位且不含空格");
         accountPart.add(accountLabel);
         accountPart.add(accountField);
         line1.add(accountPart);
 
         JPanel passwordPart = new JPanel();
         JLabel passwordLabel = new JLabel("密码");
-        passwordField = new JTextField(8);
+        passwordField = new HintTextField(16, "六位且不含空格");
         passwordPart.add(passwordLabel);
         passwordPart.add(passwordField);
         line1.add(passwordPart);
@@ -107,7 +108,7 @@ public class CreateEmployeeView extends JFrame implements SubView {
 
         JPanel birthdayPart = new JPanel();
         JLabel birthdayLabel = new JLabel("生日：");
-        birthdayField = new JTextField(15);
+        birthdayField = new HintTextField(15, "yyyy-MM-dd");
         birthdayPart.add(birthdayLabel);
         birthdayPart.add(birthdayField);
         line4.add(birthdayPart);
@@ -134,7 +135,7 @@ public class CreateEmployeeView extends JFrame implements SubView {
         line6.add(confirmButton);
 
         confirmButton.addActionListener(event -> {
-            if (fieldsNotEmpty(noField, accountField, passwordField,
+            if (noEmptyFields(noField, accountField, passwordField,
                     nameField, idNoField, birthdayField, phoneField, emailField)) {
                 if (view.getService().createEmployee(
                         noField.getText(), accountField.getText(),
@@ -176,5 +177,10 @@ public class CreateEmployeeView extends JFrame implements SubView {
     @Override
     public Dimension getPreferredSize() {
         return new Dimension(DEFAULT_WIDTH, DEFAULT_HEIGHT);
+    }
+
+    @Override
+    public void initFrameInfo() {
+
     }
 }

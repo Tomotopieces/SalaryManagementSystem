@@ -23,15 +23,11 @@ public class CreateSalaryView extends JFrame implements SubView {
     private final JTextField taxField;
     private final JTextField securityField;
     private final JTextField fundField;
-    private final JTextField actuallyField;
     private final JTextField monthField;
 
     public CreateSalaryView(AdminView view) {
         // initialize frame information
-        setTitle("创建新工资条");
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setSize(DEFAULT_WIDTH, DEFAULT_HEIGHT);
-        setWindowsLookAndFeel();
+        initFrameInfo();
 
         JPanel mainPanel = new JPanel(new GridLayout(5, 1));
 
@@ -106,13 +102,6 @@ public class CreateSalaryView extends JFrame implements SubView {
 
         JPanel line4 = new JPanel();
 
-        JPanel actuallyPart = new JPanel();
-        JLabel actuallyLabel = new JLabel("实际工资");
-        actuallyField = new JTextField(8);
-        actuallyPart.add(actuallyLabel);
-        actuallyPart.add(actuallyField);
-        line4.add(actuallyPart);
-
         JPanel monthPart = new JPanel();
         JLabel monthLabel = new JLabel("工资月份");
         monthField = new JTextField(8);
@@ -126,23 +115,27 @@ public class CreateSalaryView extends JFrame implements SubView {
         line5.add(confirmButton);
 
         confirmButton.addActionListener(event -> {
-            if (fieldsNotEmpty(employeeIdField,
+            if (noEmptyFields(employeeIdField,
                     baseField, postField, lengthField, phoneField, trafficField,
                     taxField, securityField, fundField,
-                    actuallyField, monthField)) {
+                    monthField)) {
+                // parse values for calculate
+                Double base = Double.parseDouble(baseField.getText());
+                Double post = Double.parseDouble(postField.getText());
+                Double length = Double.parseDouble(lengthField.getText());
+                Double phone = Double.parseDouble(phoneField.getText());
+                Double traffic = Double.parseDouble(trafficField.getText());
+                Double tax = Double.parseDouble(taxField.getText());
+                Double security = Double.parseDouble(securityField.getText());
+                Double fund = Double.parseDouble(fundField.getText());
+                Double actually = base + post + length + phone + traffic;
+                Double fin = actually + tax + security + fund; // negative number, so plus
                 if (view.getService().createSalary(
                         Integer.parseInt(employeeIdField.getText()),
-                        Double.parseDouble(baseField.getText()),
-                        Double.parseDouble(postField.getText()),
-                        Double.parseDouble(lengthField.getText()),
-                        Double.parseDouble(phoneField.getText()),
-                        Double.parseDouble(trafficField.getText()),
-                        Double.parseDouble(taxField.getText()),
-                        Double.parseDouble(securityField.getText()),
-                        Double.parseDouble(fundField.getText()),
-                        Double.parseDouble(actuallyField.getText()),
-                        monthField.getText()
-                )) {
+                        base, post, length, phone, traffic,
+                        tax, security, fund,
+                        actually, fin,
+                        monthField.getText())) {
                     setVisible(false);
                 } else {
                     showHint("不能存在空值！");
@@ -171,12 +164,19 @@ public class CreateSalaryView extends JFrame implements SubView {
         taxField.setText("");
         securityField.setText("");
         fundField.setText("");
-        actuallyField.setText("");
         monthField.setText("");
     }
 
     @Override
     public Dimension getPreferredSize() {
         return new Dimension(DEFAULT_WIDTH, DEFAULT_HEIGHT);
+    }
+
+    @Override
+    public void initFrameInfo() {
+        setTitle("创建新工资条");
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setSize(DEFAULT_WIDTH, DEFAULT_HEIGHT);
+        setWindowsLookAndFeel();
     }
 }

@@ -1,5 +1,8 @@
 package io.tomoto.util;
 
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -12,6 +15,8 @@ import java.sql.Timestamp;
  * 2020/11/7 9:59
  */
 public class DaoUtil {
+    private static final Logger logger = LogManager.getLogger(DaoUtil.class);
+
     public static <T> Boolean setStatementParameter(PreparedStatement statement, Integer index, T value) throws SQLException {
         if (value instanceof Integer) {
             statement.setInt(index, (Integer) value);
@@ -24,6 +29,7 @@ public class DaoUtil {
         } else if (value instanceof Timestamp) {
             statement.setTimestamp(index, (Timestamp) value);
         } else {
+            logger.error("Unexpected property type: " + value.getClass());
             return false;
         }
         return true;

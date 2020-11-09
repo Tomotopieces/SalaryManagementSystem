@@ -29,7 +29,7 @@ public class LoginService implements Service {
         return Instance.INSTANCE;
     }
 
-    public Boolean login(Boolean admin, String account, String password) {
+    public Boolean login(Boolean asAdmin, String account, String password) {
         Employee employee = EmployeeDao.getInstance().read(account);
         if (employee == null) {
             loginView.showHint("账户不存在！");
@@ -38,7 +38,7 @@ public class LoginService implements Service {
             loginView.showHint("密码错误！");
             return false;
         }
-        if (admin) {
+        if (asAdmin) {
             EventQueue.invokeLater(() -> {
                 memberView = new AdminView(employee.getId());
                 ((AdminView) memberView).setVisible(true);

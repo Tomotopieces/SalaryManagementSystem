@@ -50,7 +50,7 @@ public class EmployeeDao implements Dao<Employee, Integer> {
                 "VALUES " +
                 "(?, ?, ?, ?," +
                 " ?, ?, ?, ?, ?, ?," +
-                " ?, ?)";
+                " ?, ?);";
         try (PreparedStatement statement = connection.prepareStatement(command)) {
             // account information
             statement.setString(1, employee.getNo());
@@ -72,7 +72,7 @@ public class EmployeeDao implements Dao<Employee, Integer> {
                 logger.warn("Command executed but no data was created: " + command);
                 return false;
             } else {
-                logger.info("Command executed: " + command);
+                logger.debug("Command executed: " + command);
             }
         } catch (SQLException e) {
             logger.error(e.getMessage());
@@ -83,16 +83,21 @@ public class EmployeeDao implements Dao<Employee, Integer> {
     }
 
     /**
-     * Reads an employee by its account.
+     * Reads an employee by info.
      *
-     * @param account an account
+     * @param info a No or an account
      * @return the employee or null if not exists
      */
-    public Employee read(String account) {
-        String command = "SELECT * FROM `employee` WHERE `account` = '" + account + "';";
+    public Employee read(String info) {
+        String command;
+        if (info.length() == 6) { // account
+            command = "SELECT * FROM `employee` WHERE `account` = '" + info + "';";
+        } else { // No
+            command = "SELECT * FROM `employee` WHERE `no` = '" + info + "';";
+        }
         try (Statement statement = connection.createStatement();
              ResultSet resultSet = statement.executeQuery(command)) {
-            logger.info("Command executed: " + command);
+            logger.debug("Command executed: " + command);
             if (resultSet.next()) {
                 return readFirst(resultSet);
             }
@@ -115,6 +120,7 @@ public class EmployeeDao implements Dao<Employee, Integer> {
     }
 
     @Override
+    @Deprecated
     public Boolean update(Employee employee) {
         if (read(employee.getId()) == null) {
             logger.warn("No employee with id: " + employee.getId());
@@ -123,8 +129,8 @@ public class EmployeeDao implements Dao<Employee, Integer> {
         String command = "UPDATE `employee` SET " +
                 "`no` = ?, `account` = ?, `admin` = ?, `password` = ?," +
                 " `name` = ?, `idNo` = ?, `phone` = ?, `email` = ?, `gender` = ?, `birthday` = ?," +
-                " `updateTime` = ?, `updateOperatorId` = ? " +
-                "WHERE id = ?";
+                " `updateTime` = ?, `updateOperatorId` = ?" +
+                " WHERE id = ?;";
         try (PreparedStatement statement = connection.prepareStatement(command)) {
             // account information
             statement.setString(1, employee.getNo());
@@ -149,7 +155,7 @@ public class EmployeeDao implements Dao<Employee, Integer> {
                 logger.warn("Command executed but no data was updated: " + command);
                 return false;
             } else {
-                logger.info("Command executed: " + command);
+                logger.debug("Command executed: " + command);
             }
         } catch (SQLException e) {
             logger.error(e.getMessage());

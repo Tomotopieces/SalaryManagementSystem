@@ -23,7 +23,7 @@ public interface SubView extends View {
      * @param fields fields for check
      * @return true if no empty filed
      */
-    default Boolean fieldsNotEmpty(JTextField... fields) {
+    default Boolean noEmptyFields(JTextField... fields) {
         for (JTextField field : fields) {
             if (field.getText().isEmpty()) {
                 return false;

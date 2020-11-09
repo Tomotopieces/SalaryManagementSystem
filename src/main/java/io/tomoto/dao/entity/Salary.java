@@ -27,6 +27,7 @@ public class Salary {
     private Double fund;
     // actually salary
     private Double actually;
+    private Double fin; // finally
     private String month;
     // operator information
     private Timestamp createTime;
@@ -40,7 +41,7 @@ public class Salary {
     public Salary(Integer id,
                   Integer employeeId, Double base, Double post, Double length, Double phone, Double traffic,
                   Double tax, Double security, Double fund,
-                  Double actually, String month,
+                  Double actually, Double fin, String month,
                   Timestamp createTime, Timestamp updateTime, Integer createOperatorId, Integer updateOperatorId) {
         this.id = id;
         this.employeeId = employeeId;
@@ -53,6 +54,7 @@ public class Salary {
         this.security = security;
         this.fund = fund;
         this.actually = actually;
+        this.fin = fin;
         this.month = month;
         this.createTime = createTime;
         this.updateTime = updateTime;
@@ -62,9 +64,10 @@ public class Salary {
 
     public Salary(Integer employeeId, Double base, Double post, Double length, Double phone, Double traffic,
                   Double tax, Double security, Double fund,
-                  Double actually, String month,
+                  Double actually, Double fin, String month,
                   Integer createOperatorId) {
         this.employeeId = employeeId;
+        this.fin = fin;
         this.id = 0;
         this.base = base;
         this.post = post;
@@ -182,6 +185,15 @@ public class Salary {
         return this;
     }
 
+    public Double getFin() {
+        return fin;
+    }
+
+    public Salary setFin(Double fin) {
+        this.fin = fin;
+        return this;
+    }
+
     public String getMonth() {
         return month;
     }
@@ -241,6 +253,7 @@ public class Salary {
                 ", security=" + security +
                 ", fund=" + fund +
                 ", actually=" + actually +
+                ", fin=" + fin +
                 ", month='" + month + '\'' +
                 ", createTime=" + createTime +
                 ", updateTime=" + updateTime +
@@ -265,6 +278,7 @@ public class Salary {
                 Objects.equals(security, salary.security) &&
                 Objects.equals(fund, salary.fund) &&
                 Objects.equals(actually, salary.actually) &&
+                Objects.equals(fin, salary.fin) &&
                 Objects.equals(month, salary.month) &&
                 Objects.equals(createTime, salary.createTime) &&
                 Objects.equals(updateTime, salary.updateTime) &&
@@ -274,6 +288,10 @@ public class Salary {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, employeeId, base, post, length, phone, traffic, tax, security, fund, actually, month, createTime, updateTime, createOperatorId, updateOperatorId);
+        return Objects.hash(id, employeeId,
+                base, post, length, phone, traffic,
+                tax, security, fund,
+                actually, fin, month,
+                createTime, updateTime, createOperatorId, updateOperatorId);
     }
 }
