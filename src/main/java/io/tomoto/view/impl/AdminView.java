@@ -198,7 +198,15 @@ public class AdminView extends JFrame implements View {
         // add CRUD button listeners
         employeeReadButton.addActionListener(event -> {
             employeeTabCurrentIndex = 1;
+            salaryPageField.setText("");
+            salaryPageField.setHint(1 + "/" + getSetMaxIndex(employeeSet));
             readEmployee(employeeTabCurrentIndex);
+            firstPageButton.setEnabled(false);
+            previousPageButton.setEnabled(false);
+            if (getSetMaxIndex(employeeSet) == 1) {
+                nextPageButton.setEnabled(false);
+                lastPageButton.setEnabled(false);
+            }
         });
         employeeCreateButton.addActionListener(event ->
                 EventQueue.invokeLater(() -> {
@@ -240,6 +248,7 @@ public class AdminView extends JFrame implements View {
             chooser.setCurrentDirectory(new File("D:/"));
             chooser.showOpenDialog(this);
             service.importEmployees(chooser.getSelectedFile());
+            readEmployee(employeeTabCurrentIndex);
         });
         // add page turn button listeners
         firstPageButton.addActionListener(event -> {
@@ -301,8 +310,10 @@ public class AdminView extends JFrame implements View {
             updateEmployeeTablePage(maxIndex);
             nextPageButton.setEnabled(false);
             lastPageButton.setEnabled(false);
-            firstPageButton.setEnabled(true);
-            previousPageButton.setEnabled(true);
+            if (getSetMaxIndex(employeeSet) != 1) {
+                firstPageButton.setEnabled(true);
+                previousPageButton.setEnabled(true);
+            }
             employeePageField.setHint(employeeTabCurrentIndex + "/" + maxIndex);
         });
         return employeeManagementTabPanel;
@@ -383,8 +394,16 @@ public class AdminView extends JFrame implements View {
         // add CRUD button listeners
         salaryReadButton.addActionListener(event -> {
             salaryTabCurrentIndex = 1;
-            salaryPageField.setText(String.valueOf(salaryTabCurrentIndex));
+            salaryPageField.setText("");
+            Integer maxIndex = getSetMaxIndex(salarySet);
+            salaryPageField.setHint(1 + "/" + maxIndex);
             readSalary(salaryTabCurrentIndex);
+            firstPageButton.setEnabled(false);
+            previousPageButton.setEnabled(false);
+            if (maxIndex == 1) {
+                nextPageButton.setEnabled(false);
+                lastPageButton.setEnabled(false);
+            }
         });
         salaryCreateButton.addActionListener(event ->
                 EventQueue.invokeLater(() -> {
@@ -411,6 +430,7 @@ public class AdminView extends JFrame implements View {
         });
         // add page turn button listeners
         firstPageButton.addActionListener(event -> {
+            salaryTabCurrentIndex = 1;
             updateSalaryTablePage(1);
             firstPageButton.setEnabled(false);
             previousPageButton.setEnabled(false);
@@ -419,7 +439,8 @@ public class AdminView extends JFrame implements View {
             salaryPageField.setHint(salaryTabCurrentIndex + "/" + getSetMaxIndex(salarySet));
         });
         previousPageButton.addActionListener(event -> {
-            updateSalaryTablePage(salaryTabCurrentIndex - 1);
+            salaryTabCurrentIndex -= 1;
+            updateSalaryTablePage(salaryTabCurrentIndex);
             if (salaryTabCurrentIndex.equals(1)) {
                 firstPageButton.setEnabled(false);
                 previousPageButton.setEnabled(false);
@@ -433,28 +454,29 @@ public class AdminView extends JFrame implements View {
             if (pageText.isEmpty()) {
                 return;
             }
-            int index = Integer.parseInt(pageText);
+            salaryTabCurrentIndex = Integer.parseInt(pageText);
             Integer maxIndex = getSetMaxIndex(salarySet);
-            if (index <= 1) {
+            if (salaryTabCurrentIndex <= 1) {
                 updateSalaryTablePage(1);
                 firstPageButton.setEnabled(false);
                 previousPageButton.setEnabled(false);
                 nextPageButton.setEnabled(true);
                 lastPageButton.setEnabled(true);
-            } else if (index >= maxIndex) {
+            } else if (salaryTabCurrentIndex >= maxIndex) {
                 updateSalaryTablePage(maxIndex);
                 nextPageButton.setEnabled(false);
                 lastPageButton.setEnabled(false);
                 firstPageButton.setEnabled(true);
                 previousPageButton.setEnabled(true);
             } else {
-                updateSalaryTablePage(index);
+                updateSalaryTablePage(salaryTabCurrentIndex);
             }
             salaryPageField.setText("");
             salaryPageField.setHint(salaryTabCurrentIndex + "/" + maxIndex);
         });
         nextPageButton.addActionListener(event -> {
-            updateSalaryTablePage(salaryTabCurrentIndex + 1);
+            salaryTabCurrentIndex += 1;
+            updateSalaryTablePage(salaryTabCurrentIndex);
             Integer maxIndex = getSetMaxIndex(salarySet);
             if (salaryTabCurrentIndex.equals(maxIndex)) {
                 nextPageButton.setEnabled(false);
@@ -465,13 +487,13 @@ public class AdminView extends JFrame implements View {
             salaryPageField.setHint(salaryTabCurrentIndex + "/" + maxIndex);
         });
         lastPageButton.addActionListener(event -> {
-            Integer maxIndex = getSetMaxIndex(salarySet);
-            updateSalaryTablePage(maxIndex);
+            salaryTabCurrentIndex = getSetMaxIndex(salarySet);
+            updateSalaryTablePage(salaryTabCurrentIndex);
             nextPageButton.setEnabled(false);
             lastPageButton.setEnabled(false);
             firstPageButton.setEnabled(true);
             previousPageButton.setEnabled(true);
-            salaryPageField.setHint(salaryTabCurrentIndex + "/" + maxIndex);
+            salaryPageField.setHint(salaryTabCurrentIndex + "/" + salaryTabCurrentIndex);
         });
         return salaryManagementTabPanel;
     }
@@ -491,13 +513,14 @@ public class AdminView extends JFrame implements View {
 
     public void updateSalaryTablePage(Integer index) {
         Integer maxIndex = getSetMaxIndex(salarySet);
-        salaryTabCurrentIndex = index > maxIndex ? maxIndex : index; // reset to max if index bigger than max
+        salaryTabCurrentIndex = Math.min(index, maxIndex); // reset to max if index bigger than max
         salaryPageField.setHint(salaryTabCurrentIndex + "/" + maxIndex);
         readSalary(index);
     }
 
     private Object[][] employeesToArray(Integer index) {
-        Object[][] objects = new Object[10][]; // rows
+        int rows = index.equals(getSetMaxIndex(employeeSet)) ? employeeSet.size() - (index - 1) * 10 : 10;
+        Object[][] objects = new Object[rows][]; // rows
         Iterator<Employee> iterator = employeeSet.iterator();
         for (int i = 0; i < (index - 1) * 10; i++) {
             iterator.next();
@@ -529,7 +552,8 @@ public class AdminView extends JFrame implements View {
     }
 
     private Object[][] salaryToArray(Integer index) {
-        Object[][] objects = new Object[10][];
+        int rows = index.equals(getSetMaxIndex(salarySet)) ? salarySet.size() - (index - 1) * 10 : 10;
+        Object[][] objects = new Object[rows][];
         Iterator<Salary> iterator = salarySet.iterator();
         for (int i = 0; i < (index - 1) * 10; i++) {
             iterator.next();

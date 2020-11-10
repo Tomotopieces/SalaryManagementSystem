@@ -98,7 +98,7 @@ public class EmployeeDao implements Dao<Employee, Integer> {
      * @param employee an employee
      * @return whether the creation successful or not
      */
-    public Boolean createFromFile(Employee employee) {
+    public Boolean createWithTime(Employee employee) {
         String command = "INSERT INTO `employee` " +
                 "(`no`, `account`, `admin`, `password`," +
                 " `name`, `idNo`, `phone`, `email`, `gender`, `birthday`," +

@@ -9,9 +9,6 @@ import io.tomoto.view.impl.AdminView;
 import javafx.util.Pair;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
-import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -98,14 +95,37 @@ public class AdminService implements Service {
      */
     public Boolean createEmployee(String no, String account, Boolean isAdmin, String password,
                                   String name, String idNo, String phone, String email, String gender, String birthday) {
+        Employee employee = new Employee(
+                no, account, isAdmin, password,
+                name, idNo, phone, email, gender, birthday,
+                adminId);
+        if (!employeeReasonabilityCheck(employee)) {
+            return false;
+        }
+
+        if (!employeeDao.create(employee)) { // if no employee was created
+            view.showHint("账户创建失败！");
+            return false;
+        }
+        view.showHint("账户创建成功！");
+        return true;
+    }
+
+    /**
+     * Checks legitimacy and uniqueness of some property in the employee.
+     *
+     * @param employee an employee for check
+     * @return whether reasonable or not
+     */
+    private Boolean employeeReasonabilityCheck(Employee employee) {
         // legal check
         Map<Pair<Pattern, String>, String> helperHintMap = new HashMap<>();
-        helperHintMap.put(new Pair<>(NO_PATTERN, no), "工号不合法！必须为e开头后跟三位数字。");
-        helperHintMap.put(new Pair<>(ACCOUNT_PATTERN, account), "账户名不合法！必须为六位任意字符并且不含空格。");
-        helperHintMap.put(new Pair<>(PASSWORD_PATTERN, password), "密码不合法！必须为六位任意字符并且不含空格。");
-        helperHintMap.put(new Pair<>(ID_NO_PATTERN, idNo), "身份证号不合法！");
-        helperHintMap.put(new Pair<>(EMAIL_PATTERN, email), "邮箱不合法！");
-        helperHintMap.put(new Pair<>(PHONE_PATTERN, phone), "手机号不合法！");
+        helperHintMap.put(new Pair<>(NO_PATTERN, employee.getNo()), "工号不合法！必须为e开头后跟三位数字。");
+        helperHintMap.put(new Pair<>(ACCOUNT_PATTERN, employee.getAccount()), "账户名不合法！必须为六位任意字符并且不含空格。");
+        helperHintMap.put(new Pair<>(PASSWORD_PATTERN, employee.getPassword()), "密码不合法！必须为六位任意字符并且不含空格。");
+        helperHintMap.put(new Pair<>(ID_NO_PATTERN, employee.getIdNo()), "身份证号不合法！" + employee.getIdNo());
+        helperHintMap.put(new Pair<>(EMAIL_PATTERN, employee.getEmail()), "邮箱不合法！" + employee.getEmail());
+        helperHintMap.put(new Pair<>(PHONE_PATTERN, employee.getPhone()), "手机号不合法！" + employee.getPhone());
         for (Map.Entry<Pair<Pattern, String>, String> entry : helperHintMap.entrySet()) {
             Pair<Pattern, String> pair = entry.getKey();
             if (!pair.getKey().matcher(pair.getValue()).matches()) {
@@ -116,11 +136,11 @@ public class AdminService implements Service {
 
         // unique check
         Map<String, String> nameValueMap = new HashMap<>();
-        nameValueMap.put("no", no);
-        nameValueMap.put("account", account);
-        nameValueMap.put("idNo", idNo);
-        nameValueMap.put("phone", phone);
-        nameValueMap.put("email", email);
+        nameValueMap.put("no", employee.getNo());
+        nameValueMap.put("account", employee.getAccount());
+        nameValueMap.put("idNo", employee.getIdNo());
+        nameValueMap.put("phone", employee.getPhone());
+        nameValueMap.put("email", employee.getEmail());
         for (Map.Entry<String, String> entry : nameValueMap.entrySet()) {
             String propertyName = entry.getKey();
             String value = entry.getValue();
@@ -130,16 +150,6 @@ public class AdminService implements Service {
             }
         }
 
-        Employee employee = new Employee(
-                no, account, isAdmin, password,
-                name, idNo, phone, email, gender, birthday,
-                adminId);
-
-        if (!employeeDao.create(employee)) { // if no employee was created
-            view.showHint("账户创建失败！");
-            return false;
-        }
-        view.showHint("账户创建成功！");
         return true;
     }
 
@@ -219,13 +229,18 @@ public class AdminService implements Service {
 
     // Employee import and export
 
+    /**
+     * Import employees from the file.
+     *
+     * @param file the file for import
+     */
     public void importEmployees(File file) {
-        try (XSSFWorkbook excel = new XSSFWorkbook(OPCPackage.open(new FileInputStream(file)))) {
+        try (XSSFWorkbook excel = new XSSFWorkbook(new FileInputStream(file))) {
             Sheet sheet = excel.getSheetAt(0);
+            int count = 0;
             for (Row cells : sheet) {
                 Iterator<Cell> cellIterator = cells.iterator();
                 Employee employee = new Employee()
-//                        .setId(Double.valueOf(cellIterator.next().getNumericCellValue()).intValue())
                         .setNo(cellIterator.next().getStringCellValue())
                         .setAccount(cellIterator.next().getStringCellValue())
                         .setAdmin(cellIterator.next().getBooleanCellValue())
@@ -235,16 +250,30 @@ public class AdminService implements Service {
                         .setPhone(cellIterator.next().getStringCellValue())
                         .setEmail(cellIterator.next().getStringCellValue())
                         .setGender(cellIterator.next().getStringCellValue())
-                        .setBirthday(Timestamp.valueOf(cellIterator.next().getStringCellValue()))
+                        .setBirthday(Timestamp.valueOf(cellIterator.next().getStringCellValue() + " 00:00:00"))
                         .setCreateOperatorId(Double.valueOf(cellIterator.next().getNumericCellValue()).intValue())
-                        .setUpdateOperatorId(Double.valueOf(cellIterator.next().getNumericCellValue()).intValue())
-                        .setCreateTime(Timestamp.valueOf(cellIterator.next().getStringCellValue()))
-                        .setUpdateTime(Timestamp.valueOf(cellIterator.next().getStringCellValue()));
-                if (!employeeDao.createFromFile(employee)) {
+                        .setUpdateOperatorId(Double.valueOf(cellIterator.next().getNumericCellValue()).intValue());
+                if (!employeeReasonabilityCheck(employee)) {
+                    break;
+                }
+
+                Boolean creationResult;
+                if (cellIterator.hasNext()) {
+                    employee
+                            .setCreateTime(Timestamp.valueOf(cellIterator.next().getStringCellValue()))
+                            .setUpdateTime(Timestamp.valueOf(cellIterator.next().getStringCellValue()));
+                    creationResult = employeeDao.createWithTime(employee);
+                } else {
+                    creationResult = employeeDao.create(employee);
+                }
+                if (!creationResult) {
                     view.showHint("创建新员工失败！员工信息：" + employee);
+                } else {
+                    count++;
                 }
             }
-        } catch (IOException | InvalidFormatException e) {
+            view.showHint("成功导入了 " + count + "条新员工信息！");
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
