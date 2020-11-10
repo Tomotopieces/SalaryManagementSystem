@@ -6,17 +6,36 @@ import io.tomoto.dao.impl.EmployeeDao;
 import io.tomoto.dao.impl.SalaryDao;
 import io.tomoto.service.Service;
 import io.tomoto.view.impl.AdminView;
+import javafx.util.Pair;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.openxml4j.opc.OPCPackage;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import static io.tomoto.util.RegexUtil.ACCOUNT_PATTERN;
+import static io.tomoto.util.RegexUtil.EMAIL_PATTERN;
+import static io.tomoto.util.RegexUtil.ID_NO_PATTERN;
 import static io.tomoto.util.RegexUtil.MONTH_PATTERN;
 import static io.tomoto.util.RegexUtil.NO_PATTERN;
 import static io.tomoto.util.RegexUtil.PASSWORD_PATTERN;
+import static io.tomoto.util.RegexUtil.PHONE_PATTERN;
 
 /**
  * Service class for administrator.
@@ -79,27 +98,48 @@ public class AdminService implements Service {
      */
     public Boolean createEmployee(String no, String account, Boolean isAdmin, String password,
                                   String name, String idNo, String phone, String email, String gender, String birthday) {
+        // legal check
+        Map<Pair<Pattern, String>, String> helperHintMap = new HashMap<>();
+        helperHintMap.put(new Pair<>(NO_PATTERN, no), "工号不合法！必须为e开头后跟三位数字。");
+        helperHintMap.put(new Pair<>(ACCOUNT_PATTERN, account), "账户名不合法！必须为六位任意字符并且不含空格。");
+        helperHintMap.put(new Pair<>(PASSWORD_PATTERN, password), "密码不合法！必须为六位任意字符并且不含空格。");
+        helperHintMap.put(new Pair<>(ID_NO_PATTERN, idNo), "身份证号不合法！");
+        helperHintMap.put(new Pair<>(EMAIL_PATTERN, email), "邮箱不合法！");
+        helperHintMap.put(new Pair<>(PHONE_PATTERN, phone), "手机号不合法！");
+        for (Map.Entry<Pair<Pattern, String>, String> entry : helperHintMap.entrySet()) {
+            Pair<Pattern, String> pair = entry.getKey();
+            if (!pair.getKey().matcher(pair.getValue()).matches()) {
+                view.showHint(entry.getValue());
+                return false;
+            }
+        }
+
+        // unique check
+        Map<String, String> nameValueMap = new HashMap<>();
+        nameValueMap.put("no", no);
+        nameValueMap.put("account", account);
+        nameValueMap.put("idNo", idNo);
+        nameValueMap.put("phone", phone);
+        nameValueMap.put("email", email);
+        for (Map.Entry<String, String> entry : nameValueMap.entrySet()) {
+            String propertyName = entry.getKey();
+            String value = entry.getValue();
+            if (employeeDao.read(propertyName, value) != null) {
+                view.showHint("该属性值已存在！" + propertyName + ": " + value);
+                return false;
+            }
+        }
+
         Employee employee = new Employee(
                 no, account, isAdmin, password,
                 name, idNo, phone, email, gender, birthday,
                 adminId);
-        if (!ACCOUNT_PATTERN.matcher(account).matches()) { // if illegal account format
-//            logger.warn("Failed to create new employee because of illegal account format: " + account);
-            view.showHint("账户名不合法！必须为六位任意字符并且不含空格。");
-            return false;
-        } else if (!PASSWORD_PATTERN.matcher(password).matches()) { // if illegal password format
-//            logger.warn("Failed to create new employee because of illegal password format: " + password);
-            view.showHint("密码不合法！必须为六位任意字符并且不含空格。");
-            return false;
-        } // TODO unique check: account, idNo, phone, email
 
         if (!employeeDao.create(employee)) { // if no employee was created
-//            logger.warn("Failed to create new employee: " + employee + " for some reason.");
             view.showHint("账户创建失败！");
             return false;
         }
-//        logger.info("Administrator with id: " + adminId + " created a new employee(ignore id): " + employee);
-        view.showHint("账号创建成功！");
+        view.showHint("账户创建成功！");
         return true;
     }
 
@@ -159,19 +199,54 @@ public class AdminService implements Service {
      * Update an employee.
      *
      * @param id           the employee id
-     * @param propertyName an property name
-     * @param property     new property value
-     * @param <T>          the property type
+     * @param propertyName a propertry name
+     * @param value        new value value
+     * @param <T>          the value type
      * @return whether the update successful or not
      */
-    public <T> Boolean updateEmployee(Integer id, String propertyName, T property) {
-        Boolean successful = employeeDao.update(adminId, id, propertyName, property);
+    public <T> Boolean updateEmployee(Integer id, String propertyName, T value) {
+        if (!employeeDao.read(propertyName, value).isEmpty()) {
+            view.showHint("更新员工失败！该属性值已存在！" + propertyName + ": " + value);
+        }
+        Boolean successful = employeeDao.update(adminId, id, propertyName, value);
         if (!successful) {
             view.showHint("更新员工失败！");
         } else {
             view.showHint("更新员工成功！");
         }
         return successful;
+    }
+
+    // Employee import and export
+
+    public void importEmployees(File file) {
+        try (XSSFWorkbook excel = new XSSFWorkbook(OPCPackage.open(new FileInputStream(file)))) {
+            Sheet sheet = excel.getSheetAt(0);
+            for (Row cells : sheet) {
+                Iterator<Cell> cellIterator = cells.iterator();
+                Employee employee = new Employee()
+//                        .setId(Double.valueOf(cellIterator.next().getNumericCellValue()).intValue())
+                        .setNo(cellIterator.next().getStringCellValue())
+                        .setAccount(cellIterator.next().getStringCellValue())
+                        .setAdmin(cellIterator.next().getBooleanCellValue())
+                        .setPassword(cellIterator.next().getStringCellValue())
+                        .setName(cellIterator.next().getStringCellValue())
+                        .setIdNo(cellIterator.next().getStringCellValue())
+                        .setPhone(cellIterator.next().getStringCellValue())
+                        .setEmail(cellIterator.next().getStringCellValue())
+                        .setGender(cellIterator.next().getStringCellValue())
+                        .setBirthday(Timestamp.valueOf(cellIterator.next().getStringCellValue()))
+                        .setCreateOperatorId(Double.valueOf(cellIterator.next().getNumericCellValue()).intValue())
+                        .setUpdateOperatorId(Double.valueOf(cellIterator.next().getNumericCellValue()).intValue())
+                        .setCreateTime(Timestamp.valueOf(cellIterator.next().getStringCellValue()))
+                        .setUpdateTime(Timestamp.valueOf(cellIterator.next().getStringCellValue()));
+                if (!employeeDao.createFromFile(employee)) {
+                    view.showHint("创建新员工失败！员工信息：" + employee);
+                }
+            }
+        } catch (IOException | InvalidFormatException e) {
+            e.printStackTrace();
+        }
     }
 
     // Salary CRUD (without delete)
@@ -374,7 +449,6 @@ public class AdminService implements Service {
     /**
      * Match the actually 'read function'.
      *
-     *
      * @param info the employee name or account
      * @param from the begin month of salary, format as 'yyyyMM'
      * @param to   the end month of salary, format as 'yyyyMM'
@@ -418,6 +492,14 @@ public class AdminService implements Service {
      */
     public <T> Boolean updateSalary(Integer id, String propertyName, T property) {
         Boolean successful = salaryDao.update(adminId, id, propertyName, property);
+        if (!propertyName.equals("month")) { // update actually and fin at the same time if the updated wasn't 'month'
+            Salary salary = salaryDao.read(id);
+            Double actually = salary.getBase() + salary.getPost() + salary.getLength()
+                    + salary.getPhone() + salary.getTraffic();
+            Double fin = actually + salary.getTax() + salary.getSecurity() + salary.getFund();
+            salaryDao.update(adminId, id, "actually", actually);
+            salaryDao.update(adminId, id, "fin", fin);
+        }
         if (!successful) {
             view.showHint("更新工资条失败！");
         } else {

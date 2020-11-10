@@ -137,6 +137,7 @@ public class CreateSalaryView extends JFrame implements SubView {
                         actually, fin,
                         monthField.getText())) {
                     setVisible(false);
+                    view.readSalary(1);
                 } else {
                     showHint("不能存在空值！");
                 }

@@ -17,22 +17,13 @@ import java.awt.event.FocusListener;
  */
 public class HintTextField extends JTextField implements FocusListener {
     private final Color foreground;
-    private final String hint;
+    private String hint;
     private boolean showingHint;
-
-//    public HintTextField(final String hint) {
-//        super(hint);
-//        this.foreground = getForeground();
-//        setForeground(Color.GRAY);
-//        this.hint = hint;
-//        this.showingHint = true;
-//        super.addFocusListener(this);
-//    }
 
     public HintTextField(Integer size, final String hint) {
         super(null, hint, size);
         this.foreground = getForeground();
-        setForeground(Color.GRAY);
+        super.setForeground(Color.GRAY);
         this.hint = hint;
         this.showingHint = true;
         super.addFocusListener(this);
@@ -41,7 +32,7 @@ public class HintTextField extends JTextField implements FocusListener {
     @Override
     public void focusGained(FocusEvent e) {
         if (this.getText().isEmpty()) {
-            setForeground(foreground);
+            super.setForeground(foreground);
             super.setText("");
             showingHint = false;
         }
@@ -50,14 +41,30 @@ public class HintTextField extends JTextField implements FocusListener {
     @Override
     public void focusLost(FocusEvent e) {
         if (this.getText().isEmpty()) {
-            super.setForeground(Color.GRAY);
-            super.setText(hint);
-            showingHint = true;
+            setText("");
         }
     }
 
     @Override
     public String getText() {
         return showingHint ? "" : super.getText();
+    }
+
+    @Override
+    public void setText(String t) {
+        if (t.equals("")) {
+            super.setForeground(Color.GRAY);
+            super.setText(hint);
+            showingHint = true;
+        } else {
+            super.setForeground(foreground);
+            super.setText(t);
+            showingHint = false;
+        }
+    }
+
+    public HintTextField setHint(String hint) {
+        this.hint = hint;
+        return this;
     }
 }

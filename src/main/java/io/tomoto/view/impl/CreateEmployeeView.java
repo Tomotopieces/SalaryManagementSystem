@@ -17,14 +17,14 @@ public class CreateEmployeeView extends JFrame implements SubView {
     private static final Integer DEFAULT_WIDTH = 480;
     private static final Integer DEFAULT_HEIGHT = 320;
 
-    private final JTextField noField;
-    private final JTextField accountField;
-    private final JTextField passwordField;
+    private final HintTextField noField;
+    private final HintTextField accountField;
+    private final HintTextField passwordField;
     private final JRadioButton adminTrueButton;
     private final JTextField nameField;
     private final JRadioButton maleButton;
     private final JTextField idNoField;
-    private final JTextField birthdayField;
+    private final HintTextField birthdayField;
     private final JTextField phoneField;
     private final JTextField emailField;
 
@@ -143,6 +143,7 @@ public class CreateEmployeeView extends JFrame implements SubView {
                         nameField.getText(), idNoField.getText(), phoneField.getText(), emailField.getText(),
                         maleButton.isSelected() ? "男" : "女", birthdayField.getText())) {
                     setVisible(false);
+                    view.readEmployee(1);
                 }
             } else {
                 showHint("不能存在空值！");

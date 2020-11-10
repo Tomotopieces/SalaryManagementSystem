@@ -7,7 +7,9 @@ import io.tomoto.view.HintTextField;
 import io.tomoto.view.View;
 
 import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
+import java.io.File;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.HashSet;
@@ -15,6 +17,8 @@ import java.util.Iterator;
 import java.util.Set;
 
 import static io.tomoto.util.DateUtil.DATE_FORMAT;
+import static javax.swing.JOptionPane.YES_NO_OPTION;
+import static javax.swing.JOptionPane.YES_OPTION;
 
 /**
  * Administrator main frame.
@@ -27,9 +31,9 @@ public class AdminView extends JFrame implements View {
     private static final Integer DEFAULT_WIDTH = 480; // for personal info tab
     private static final Integer DEFAULT_HEIGHT = 320;
     private static final Integer DEFAULT_WIDTH_2 = 1200; // for employee management tab
-    private static final Integer DEFAULT_HEIGHT_2 = 640;
+    private static final Integer DEFAULT_HEIGHT_2 = 480;
     private static final Integer DEFAULT_WIDTH_3 = 1360; // for salary management tab
-    private static final Integer DEFAULT_HEIGHT_3 = 640;
+    private static final Integer DEFAULT_HEIGHT_3 = 480;
     private static final String[] EMPLOYEE_TABLE_COLUMN_NAMES_CHINESE = {
             "id", "工号", "账户", "管理员", "密码",
             "姓名", "身份证", "手机号", "邮箱", "性别", "生日",
@@ -41,7 +45,7 @@ public class AdminView extends JFrame implements View {
             "createOperatorId", "createTime", "updateOperatorId", "updateTime"
     };
     private static final String[] SALARY_TABLE_COLUMN_NAMES_CHINESE = {
-            "id", "员工id",
+            "id", "员工工号",
             "基本工资", "岗位工资", "工龄工资", "通讯补贴", "交通补贴",
             "个税代缴", "社保代缴", "住房公积金",
             "实际工资", "到手工资", "工资月份",
@@ -61,19 +65,36 @@ public class AdminView extends JFrame implements View {
     private final CreateSalaryView createSalaryView = new CreateSalaryView(this);
 
     private final JTabbedPane mainPane = new JTabbedPane();
+
+    private JTextField employeeReadInputField;
     private JScrollPane employeeTableScrollPane;
     private JTable employeeTable;
+//    private Set<Employee> employeeSet = new TreeSet<>(Comparator.comparing(Employee::getId));
+    private Set<Employee> employeeSet;
+    private HintTextField employeePageField;
+    private Integer employeeTabCurrentIndex = 1;
+
+    private JTextField salaryReadInfoInputField;
+    private JTextField salaryReadMonthInputField1;
+    private JTextField salaryReadMonthInputField2;
     private JScrollPane salaryTableScrollPane;
     private JTable salaryTable;
-    private Set<Employee> employeeSet = new HashSet<>();
-    private Set<Salary> salarySet = new HashSet<>();
+    private Set<Salary> salarySet;
+    private HintTextField salaryPageField;
+    private Integer salaryTabCurrentIndex = 1;
+
+    private JFileChooser chooser;
 
     public AdminView(Integer id) {
         // initialize frame fields
         this.id = id;
         service = AdminService.getInstance(this);
-        initFrameInfo(); // initialize frame information
         assert service != null;
+        employeeSet = service.readAllEmployees();
+        salarySet = service.readAllSalaries();
+        chooser = new JFileChooser();
+        chooser.setFileFilter(new FileNameExtensionFilter("Excel files", "xls", "xlsx"));
+        initFrameInfo(); // initialize frame information
         // add tabs
         mainPane.addTab("个人信息", generatePersonalInfoTab(service.readEmployee(id)));
         mainPane.addTab("员工管理", generateEmployeeManagementTab());
@@ -126,7 +147,7 @@ public class AdminView extends JFrame implements View {
         // generate CRUD panel
         JPanel employeeCrudPanel = new JPanel();
         JLabel employeeReadLabel = new JLabel("员工：");
-        JTextField employeeReadInputField = new HintTextField(16, "工号/姓名/留空"); // input employee name or No
+        employeeReadInputField = new HintTextField(16, "工号/姓名/留空"); // input employee name or No
         JButton employeeReadButton = new JButton("查询");
         JButton employeeCreateButton = new JButton("创建");
         JButton employeeDeleteButton = new JButton("删除");
@@ -138,23 +159,46 @@ public class AdminView extends JFrame implements View {
         employeeCrudPanel.add(employeeDeleteButton);
         employeeCrudPanel.add(employeeUpdateButton);
         employeeManagementTabPanel.add(employeeCrudPanel);
+        //generate file IO panel
+        JPanel fileIOPanel = new JPanel();
+        JButton employeeImportButton = new JButton("导入");
+        JButton employeeExportButton = new JButton("导出");
+        fileIOPanel.add(employeeImportButton);
+        fileIOPanel.add(employeeExportButton);
+        employeeManagementTabPanel.add(fileIOPanel);
         // generate employee management table
-        employeeTable = new JTable(new MyTableModel(employeesToArray(), EMPLOYEE_TABLE_COLUMN_NAMES_CHINESE));
+        employeeTable = new JTable(new MyTableModel(employeesToArray(employeeTabCurrentIndex), EMPLOYEE_TABLE_COLUMN_NAMES_CHINESE));
+        employeeTable.setAutoCreateRowSorter(true);
         employeeTable.setPreferredScrollableViewportSize(employeeTable.getPreferredSize());
         employeeTableScrollPane = new JScrollPane(employeeTable);
         employeeTableScrollPane.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(),
                 "Result"));
         employeeManagementTabPanel.add(employeeTableScrollPane);
-        // add button listeners
+        // generate page turn button panel
+        JPanel turnPagePanel = new JPanel();
+        JButton firstPageButton = new JButton("首页");
+        firstPageButton.setEnabled(false);
+        JButton previousPageButton = new JButton("上一页");
+        previousPageButton.setEnabled(false);
+        employeePageField = new HintTextField(4, employeeTabCurrentIndex + "/" + getSetMaxIndex(employeeSet));
+        JButton jumpPageButton = new JButton("翻至该页");
+        JButton nextPageButton = new JButton("下一页");
+        JButton lastPageButton = new JButton("尾页");
+        if (getSetMaxIndex(employeeSet) == 1) {
+            nextPageButton.setEnabled(false);
+            lastPageButton.setEnabled(false);
+        }
+        turnPagePanel.add(firstPageButton);
+        turnPagePanel.add(previousPageButton);
+        turnPagePanel.add(employeePageField);
+        turnPagePanel.add(jumpPageButton);
+        turnPagePanel.add(nextPageButton);
+        turnPagePanel.add(lastPageButton);
+        employeeManagementTabPanel.add(turnPagePanel);
+        // add CRUD button listeners
         employeeReadButton.addActionListener(event -> {
-            String info = employeeReadInputField.getText();
-            if (!info.isEmpty()) { // match read mode
-                employeeSet = service.readEmployee(info); // read by employee No or name
-            } else {
-                employeeSet = service.readAllEmployees(); // read all employees when the info is empty
-            }
-            updateTable(employeeTable, employeesToArray(), EMPLOYEE_TABLE_COLUMN_NAMES_CHINESE, employeeTableScrollPane);
-            pack();
+            employeeTabCurrentIndex = 1;
+            readEmployee(employeeTabCurrentIndex);
         });
         employeeCreateButton.addActionListener(event ->
                 EventQueue.invokeLater(() -> {
@@ -166,8 +210,11 @@ public class AdminView extends JFrame implements View {
             if (row == -1) {
                 return;
             }
-            if (service.deleteEmployee((Integer) employeeTable.getValueAt(row, 0))) {
-                // what to do?
+            int i = JOptionPane.showConfirmDialog(null, "确定删除该行员工数据吗？", "删除确认", YES_NO_OPTION);
+            if (i == YES_OPTION) {
+                if (service.deleteEmployee((Integer) employeeTable.getValueAt(row, 0))) {
+                    readEmployee(employeeTabCurrentIndex);
+                }
             }
         });
         employeeUpdateButton.addActionListener(event -> {
@@ -181,14 +228,102 @@ public class AdminView extends JFrame implements View {
                 return;
             }
             String newValue = JOptionPane.showInputDialog(null, "输入新值", employeeTable.getValueAt(row, column));
-            if (service.updateEmployee(
+            if (newValue != null && service.updateEmployee(
                     (Integer) employeeTable.getValueAt(row, 0),
                     EMPLOYEE_TABLE_COLUMN_NAMES_ORIGIN[column],
                     newValue)) {
-                employeeTable.setValueAt(newValue, row, column);
+                readEmployee(employeeTabCurrentIndex);
             }
         });
+        // add file IO button listeners
+        employeeImportButton.addActionListener(event -> {
+            chooser.setCurrentDirectory(new File("D:/"));
+            chooser.showOpenDialog(this);
+            service.importEmployees(chooser.getSelectedFile());
+        });
+        // add page turn button listeners
+        firstPageButton.addActionListener(event -> {
+            updateEmployeeTablePage(1);
+            firstPageButton.setEnabled(false);
+            previousPageButton.setEnabled(false);
+            nextPageButton.setEnabled(true);
+            lastPageButton.setEnabled(true);
+            employeePageField.setHint(employeeTabCurrentIndex + "/" + getSetMaxIndex(employeeSet));
+        });
+        previousPageButton.addActionListener(event -> {
+            updateEmployeeTablePage(employeeTabCurrentIndex - 1);
+            if (employeeTabCurrentIndex.equals(1)) {
+                firstPageButton.setEnabled(false);
+                previousPageButton.setEnabled(false);
+            }
+            nextPageButton.setEnabled(true);
+            lastPageButton.setEnabled(true);
+            employeePageField.setHint(employeeTabCurrentIndex + "/" + getSetMaxIndex(employeeSet));
+        });
+        jumpPageButton.addActionListener(event -> {
+            String pageText = salaryPageField.getText();
+            if (pageText.isEmpty()) {
+                return;
+            }
+            int index = Integer.parseInt(pageText);
+            Integer maxIndex = getSetMaxIndex(employeeSet);
+            if (index <= 1) {
+                updateEmployeeTablePage(1);
+                firstPageButton.setEnabled(false);
+                previousPageButton.setEnabled(false);
+                nextPageButton.setEnabled(true);
+                lastPageButton.setEnabled(true);
+            } else if (index >= maxIndex) {
+                updateEmployeeTablePage(maxIndex);
+                nextPageButton.setEnabled(false);
+                lastPageButton.setEnabled(false);
+                firstPageButton.setEnabled(true);
+                previousPageButton.setEnabled(true);
+            } else {
+                updateEmployeeTablePage(index);
+            }
+            employeePageField.setText("");
+            employeePageField.setHint(employeeTabCurrentIndex + "/" + maxIndex);
+        });
+        nextPageButton.addActionListener(event -> {
+            updateEmployeeTablePage(employeeTabCurrentIndex + 1);
+            Integer maxIndex = getSetMaxIndex(employeeSet);
+            if (employeeTabCurrentIndex.equals(maxIndex)) {
+                nextPageButton.setEnabled(false);
+                lastPageButton.setEnabled(false);
+            }
+            firstPageButton.setEnabled(true);
+            previousPageButton.setEnabled(true);
+            employeePageField.setHint(employeeTabCurrentIndex + "/" + maxIndex);
+        });
+        lastPageButton.addActionListener(event -> {
+            Integer maxIndex = getSetMaxIndex(employeeSet);
+            updateEmployeeTablePage(maxIndex);
+            nextPageButton.setEnabled(false);
+            lastPageButton.setEnabled(false);
+            firstPageButton.setEnabled(true);
+            previousPageButton.setEnabled(true);
+            employeePageField.setHint(employeeTabCurrentIndex + "/" + maxIndex);
+        });
         return employeeManagementTabPanel;
+    }
+
+    public void readEmployee(Integer index) {
+        String info = employeeReadInputField.getText();
+        if (!info.isEmpty()) { // match read mode
+            employeeSet = service.readEmployee(info); // read by employee No or name
+        } else {
+            employeeSet = service.readAllEmployees(); // read all employees when the info is empty
+        }
+        updateTable(employeeTable, employeesToArray(index), EMPLOYEE_TABLE_COLUMN_NAMES_CHINESE, employeeTableScrollPane);
+        pack();
+    }
+
+    public void updateEmployeeTablePage(Integer index) {
+        Integer maxIndex = getSetMaxIndex(employeeSet);
+        employeeTabCurrentIndex = index > maxIndex ? maxIndex : index; // reset to max if index bigger than max
+        employeePageField.setHint(employeeTabCurrentIndex + "/" + maxIndex);
+        readSalary(index);
     }
 
     private JPanel generateSalaryManagementTab() {
@@ -197,11 +332,11 @@ public class AdminView extends JFrame implements View {
         // generate CRUD panel
         JPanel salaryCrudPanel = new JPanel();
         JLabel salaryReadLabel1 = new JLabel("员工：");
-        JTextField salaryReadInfoInputField = new HintTextField(16, "工号/姓名/留空"); // input employee name or No
+        salaryReadInfoInputField = new HintTextField(16, "工号/姓名/留空"); // input employee name or No
         JLabel salaryReadLabel2 = new JLabel("月份：");
-        JTextField salaryReadMonthInputField1 = new HintTextField(25, "起始月份(yyyyMM)/留空"); // input month 'from'
+        salaryReadMonthInputField1 = new HintTextField(25, "起始月份(yyyyMM)/留空"); // input month 'from'
         JLabel salaryReadLabel3 = new JLabel(" - ");
-        JTextField salaryReadMonthInputField2 = new HintTextField(25, "结束月份(yyyyMM)/留空"); // input month 'to'
+        salaryReadMonthInputField2 = new HintTextField(25, "结束月份(yyyyMM)/留空"); // input month 'to'
         JButton salaryReadButton = new JButton("查询");
         JButton salaryCreateButton = new JButton("创建");
         JButton salaryUpdateButton = new JButton("更新");
@@ -215,24 +350,41 @@ public class AdminView extends JFrame implements View {
         salaryCrudPanel.add(salaryCreateButton);
         salaryCrudPanel.add(salaryUpdateButton);
         salaryManagementTabPanel.add(salaryCrudPanel);
-        //generate salary management table
-        salaryTable = new JTable(new MyTableModel(salaryToArray(), SALARY_TABLE_COLUMN_NAMES_CHINESE));
+        // generate salary management table
+        MyTableModel model = new MyTableModel(salaryToArray(salaryTabCurrentIndex), SALARY_TABLE_COLUMN_NAMES_CHINESE);
+        model.setRowCount(10);
+        salaryTable = new JTable(model);
+        salaryTable.setAutoCreateRowSorter(true);
         salaryTable.setPreferredScrollableViewportSize(salaryTable.getPreferredSize());
         salaryTableScrollPane = new JScrollPane(salaryTable);
         salaryTableScrollPane.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Result"));
         salaryManagementTabPanel.add(salaryTableScrollPane);
-        // add button listeners
+        // generate page turn button panel
+        JPanel turnPagePanel = new JPanel();
+        JButton firstPageButton = new JButton("首页");
+        firstPageButton.setEnabled(false);
+        JButton previousPageButton = new JButton("上一页");
+        previousPageButton.setEnabled(false);
+        salaryPageField = new HintTextField(4, salaryTabCurrentIndex + "/" + getSetMaxIndex(salarySet));
+        JButton jumpPageButton = new JButton("翻至该页");
+        JButton nextPageButton = new JButton("下一页");
+        JButton lastPageButton = new JButton("尾页");
+        if (getSetMaxIndex(salarySet) == 1) {
+            nextPageButton.setEnabled(false);
+            lastPageButton.setEnabled(false);
+        }
+        turnPagePanel.add(firstPageButton);
+        turnPagePanel.add(previousPageButton);
+        turnPagePanel.add(salaryPageField);
+        turnPagePanel.add(jumpPageButton);
+        turnPagePanel.add(nextPageButton);
+        turnPagePanel.add(lastPageButton);
+        salaryManagementTabPanel.add(turnPagePanel);
+        // add CRUD button listeners
         salaryReadButton.addActionListener(event -> {
-            String info = salaryReadInfoInputField.getText();
-            String from = salaryReadMonthInputField1.getText();
-            String to = salaryReadMonthInputField2.getText();
-            // match 'read' pattern
-            Set<Salary> result = service.readSalary(info, from, to);
-            if (result != null) {
-                salarySet = result;
-                updateTable(salaryTable, salaryToArray(), SALARY_TABLE_COLUMN_NAMES_CHINESE, salaryTableScrollPane);
-                pack();
-            }
+            salaryTabCurrentIndex = 1;
+            salaryPageField.setText(String.valueOf(salaryTabCurrentIndex));
+            readSalary(salaryTabCurrentIndex);
         });
         salaryCreateButton.addActionListener(event ->
                 EventQueue.invokeLater(() -> {
@@ -245,7 +397,7 @@ public class AdminView extends JFrame implements View {
             if (row == -1 || column == -1) {
                 return;
             }
-            if (column > 10 || column == 0) {
+            if ((column > 9 && column != 12) || column < 1) { // 12(month) is editable
                 showHint("此项数据无法编辑！");
                 return;
             }
@@ -254,23 +406,113 @@ public class AdminView extends JFrame implements View {
                     (Integer) salaryTable.getValueAt(row, 0),
                     SALARY_TABLE_COLUMN_NAMES_ORIGIN[column],
                     newValue)) {
-                salaryTable.setValueAt(newValue, row, column);
+                readSalary(salaryTabCurrentIndex);
             }
+        });
+        // add page turn button listeners
+        firstPageButton.addActionListener(event -> {
+            updateSalaryTablePage(1);
+            firstPageButton.setEnabled(false);
+            previousPageButton.setEnabled(false);
+            nextPageButton.setEnabled(true);
+            lastPageButton.setEnabled(true);
+            salaryPageField.setHint(salaryTabCurrentIndex + "/" + getSetMaxIndex(salarySet));
+        });
+        previousPageButton.addActionListener(event -> {
+            updateSalaryTablePage(salaryTabCurrentIndex - 1);
+            if (salaryTabCurrentIndex.equals(1)) {
+                firstPageButton.setEnabled(false);
+                previousPageButton.setEnabled(false);
+            }
+            nextPageButton.setEnabled(true);
+            lastPageButton.setEnabled(true);
+            salaryPageField.setHint(salaryTabCurrentIndex + "/" + getSetMaxIndex(salarySet));
+        });
+        jumpPageButton.addActionListener(event -> {
+            String pageText = salaryPageField.getText();
+            if (pageText.isEmpty()) {
+                return;
+            }
+            int index = Integer.parseInt(pageText);
+            Integer maxIndex = getSetMaxIndex(salarySet);
+            if (index <= 1) {
+                updateSalaryTablePage(1);
+                firstPageButton.setEnabled(false);
+                previousPageButton.setEnabled(false);
+                nextPageButton.setEnabled(true);
+                lastPageButton.setEnabled(true);
+            } else if (index >= maxIndex) {
+                updateSalaryTablePage(maxIndex);
+                nextPageButton.setEnabled(false);
+                lastPageButton.setEnabled(false);
+                firstPageButton.setEnabled(true);
+                previousPageButton.setEnabled(true);
+            } else {
+                updateSalaryTablePage(index);
+            }
+            salaryPageField.setText("");
+            salaryPageField.setHint(salaryTabCurrentIndex + "/" + maxIndex);
+        });
+        nextPageButton.addActionListener(event -> {
+            updateSalaryTablePage(salaryTabCurrentIndex + 1);
+            Integer maxIndex = getSetMaxIndex(salarySet);
+            if (salaryTabCurrentIndex.equals(maxIndex)) {
+                nextPageButton.setEnabled(false);
+                lastPageButton.setEnabled(false);
+            }
+            firstPageButton.setEnabled(true);
+            previousPageButton.setEnabled(true);
+            salaryPageField.setHint(salaryTabCurrentIndex + "/" + maxIndex);
+        });
+        lastPageButton.addActionListener(event -> {
+            Integer maxIndex = getSetMaxIndex(salarySet);
+            updateSalaryTablePage(maxIndex);
+            nextPageButton.setEnabled(false);
+            lastPageButton.setEnabled(false);
+            firstPageButton.setEnabled(true);
+            previousPageButton.setEnabled(true);
+            salaryPageField.setHint(salaryTabCurrentIndex + "/" + maxIndex);
         });
         return salaryManagementTabPanel;
     }
 
-    private Object[][] employeesToArray() {
-        Object[][] objects = new Object[employeeSet.size()][]; // rows
+    public void readSalary(Integer index) {
+        String info = salaryReadInfoInputField.getText();
+        String from = salaryReadMonthInputField1.getText();
+        String to = salaryReadMonthInputField2.getText();
+        // match 'read' pattern
+        Set<Salary> result = service.readSalary(info, from, to);
+        if (result != null) {
+            salarySet = result;
+            updateTable(salaryTable, salaryToArray(index), SALARY_TABLE_COLUMN_NAMES_CHINESE, salaryTableScrollPane);
+            pack();
+        }
+    }
+
+    public void updateSalaryTablePage(Integer index) {
+        Integer maxIndex = getSetMaxIndex(salarySet);
+        salaryTabCurrentIndex = index > maxIndex ? maxIndex : index; // reset to max if index bigger than max
+        salaryPageField.setHint(salaryTabCurrentIndex + "/" + maxIndex);
+        readSalary(index);
+    }
+
+    private Object[][] employeesToArray(Integer index) {
+        Object[][] objects = new Object[10][]; // rows
         Iterator<Employee> iterator = employeeSet.iterator();
-        for (int i = 0; i < employeeSet.size(); i++) {
+        for (int i = 0; i < (index - 1) * 10; i++) {
+            iterator.next();
+        }
+        for (int i = (index - 1) * 10; i < 10; i++) {
+            if (!iterator.hasNext()) {
+                break;
+            }
             Employee next = iterator.next();
             objects[i] = new Object[15]; // columns
             Object[] values = objects[i];
             values[0] = next.getId();
             values[1] = next.getNo();
             values[2] = next.getAccount();
-            values[3] = next.getAdmin();
+            values[3] = next.getAdmin() ? "是" : "否";
             values[4] = next.getPassword();
             values[5] = next.getName();
             values[6] = next.getIdNo();
@@ -286,15 +528,21 @@ public class AdminView extends JFrame implements View {
         return objects;
     }
 
-    private Object[][] salaryToArray() {
-        Object[][] objects = new Object[salarySet.size()][];
+    private Object[][] salaryToArray(Integer index) {
+        Object[][] objects = new Object[10][];
         Iterator<Salary> iterator = salarySet.iterator();
-        for (int i = 0; i < salarySet.size(); i++) {
+        for (int i = 0; i < (index - 1) * 10; i++) {
+            iterator.next();
+        }
+        for (int i = 0; i < 10; i++) {
+            if (!iterator.hasNext()) {
+                break;
+            }
             Salary next = iterator.next();
             objects[i] = new Object[17];
             Object[] values = objects[i];
             values[0] = next.getId();
-            values[1] = next.getEmployeeId();
+            values[1] = service.readEmployee(next.getEmployeeId()).getNo();
             values[2] = next.getBase();
             values[3] = next.getPost();
             values[4] = next.getLength();

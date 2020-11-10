@@ -41,6 +41,14 @@ public class EmployeeDao implements Dao<Employee, Integer> {
         return Instance.INSTANCE;
     }
 
+    /**
+     * Records an employee to database.
+     * <p>
+     * This create will generate the creator, updater and time automatically.
+     *
+     * @param employee an employee
+     * @return whether the creation successful or not
+     */
     @Override
     public Boolean create(Employee employee) {
         String command = "INSERT INTO `employee` " +
@@ -67,6 +75,56 @@ public class EmployeeDao implements Dao<Employee, Integer> {
             // operator information
             statement.setInt(11, employee.getCreateOperatorId());
             statement.setInt(12, employee.getUpdateOperatorId());
+
+            if (statement.executeUpdate() == 0) {
+                logger.warn("Command executed but no data was created: " + command);
+                return false;
+            } else {
+                logger.debug("Command executed: " + command);
+            }
+        } catch (SQLException e) {
+            logger.error(e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Records an employee to database.
+     * <p>
+     * This creation will also read createTime and updateTime.
+     *
+     * @param employee an employee
+     * @return whether the creation successful or not
+     */
+    public Boolean createFromFile(Employee employee) {
+        String command = "INSERT INTO `employee` " +
+                "(`no`, `account`, `admin`, `password`," +
+                " `name`, `idNo`, `phone`, `email`, `gender`, `birthday`," +
+                " `createOperatorId`, `updateOperatorId`, `createTime`, `updateTime`) " +
+                "VALUES " +
+                "(?, ?, ?, ?," +
+                " ?, ?, ?, ?, ?, ?," +
+                " ?, ?, ?, ?);";
+        try (PreparedStatement statement = connection.prepareStatement(command)) {
+            // account information
+            statement.setString(1, employee.getNo());
+            statement.setString(2, employee.getAccount());
+            statement.setBoolean(3, employee.getAdmin());
+            statement.setString(4, employee.getPassword());
+            // personal information
+            statement.setString(5, employee.getName());
+            statement.setString(6, employee.getIdNo());
+            statement.setString(7, employee.getPhone());
+            statement.setString(8, employee.getEmail());
+            statement.setString(9, employee.getGender());
+            statement.setTimestamp(10, employee.getBirthday());
+            // operator information
+            statement.setInt(11, employee.getCreateOperatorId());
+            statement.setInt(12, employee.getUpdateOperatorId());
+            statement.setTimestamp(13, employee.getCreateTime());
+            statement.setTimestamp(13, employee.getUpdateTime());
 
             if (statement.executeUpdate() == 0) {
                 logger.warn("Command executed but no data was created: " + command);

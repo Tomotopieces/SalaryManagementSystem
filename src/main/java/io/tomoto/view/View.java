@@ -2,8 +2,10 @@ package io.tomoto.view;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableModel;
 import java.awt.*;
 import java.sql.SQLException;
+import java.util.Set;
 
 /**
  * View class interface.
@@ -64,10 +66,15 @@ public interface View extends AutoCloseable {
         // add new rows
         DefaultTableModel model = (DefaultTableModel) table.getModel();
         model.setDataVector(data, columnNames);
-        model.fireTableDataChanged();
-        table.setPreferredScrollableViewportSize(table.getPreferredSize());
-//        table.repaint();
+        model.setRowCount(10);
+//        model.fireTableDataChanged();
+//        table.setPreferredScrollableViewportSize(table.getPreferredSize());
         scrollPane.revalidate();
+    }
+
+    default Integer getSetMaxIndex(Set<?> set) {
+        int size = set.size();
+        return size % 10 == 0 ? size / 10 : size / 10 + 1;
     }
 
     /**

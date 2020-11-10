@@ -78,6 +78,28 @@ public interface Dao<T, ID> extends AutoCloseable {
     }
 
     /**
+     * Reads entities by specific property value.
+     *
+     * @param propertyName a property name
+     * @param value        a value
+     * @param <P>          a value type
+     * @return a set of entity(ies)
+     */
+    default <P> Set<T> read(String propertyName, P value) {
+        String command = "SELECT * FROM `" + getTableName() + "` WHERE `" + propertyName + "` = " + value + ";";
+        HashSet<T> result = new HashSet<>();
+        try (Statement statement = getConnection().createStatement();
+             ResultSet resultSet = statement.executeQuery(command)) {
+            while (resultSet.next()) {
+                result.add(readFirst(resultSet));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    /**
      * Reads all entities.
      *
      * @return a set of entities.
